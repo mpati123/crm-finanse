@@ -1,0 +1,90 @@
+<div class="categories-page">
+  <header class="page-header">
+    <h1>{{ 'CATEGORIES.TITLE' | translate }}</h1>
+    <button class="btn-primary" (click)="openForm()">+ {{ 'CATEGORIES.ADD_CATEGORY' | translate }}</button>
+  </header>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'CATEGORIES.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading" class="categories-grid">
+    <div class="category-section">
+      <h2>{{ 'CATEGORIES.EXPENSE_CATEGORIES' | translate }}</h2>
+      <div class="category-list">
+        <div *ngIf="getExpenseCategories().length === 0" class="empty">
+          {{ 'CATEGORIES.NO_EXPENSE_CATEGORIES' | translate }}
+        </div>
+        <div *ngFor="let cat of getExpenseCategories()" class="category-card">
+          <div class="category-color" [style.background]="cat.color || '#6b7280'"></div>
+          <div class="category-info">
+            <span class="category-name">{{ cat.name }}</span>
+            <span class="category-type expense">{{ 'CATEGORY_TYPES.EXPENSE' | translate }}</span>
+          </div>
+          <div class="category-actions">
+            <button class="btn-icon" (click)="openForm(cat)">✏️</button>
+            <button class="btn-icon delete" (click)="deleteCategory(cat.id!)">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="category-section">
+      <h2>{{ 'CATEGORIES.INCOME_CATEGORIES' | translate }}</h2>
+      <div class="category-list">
+        <div *ngIf="getIncomeCategories().length === 0" class="empty">
+          {{ 'CATEGORIES.NO_INCOME_CATEGORIES' | translate }}
+        </div>
+        <div *ngFor="let cat of getIncomeCategories()" class="category-card">
+          <div class="category-color" [style.background]="cat.color || '#6b7280'"></div>
+          <div class="category-info">
+            <span class="category-name">{{ cat.name }}</span>
+            <span class="category-type income">{{ 'CATEGORY_TYPES.INCOME' | translate }}</span>
+          </div>
+          <div class="category-actions">
+            <button class="btn-icon" (click)="openForm(cat)">✏️</button>
+            <button class="btn-icon delete" (click)="deleteCategory(cat.id!)">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Form -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingCategory ? ('CATEGORIES.EDIT_CATEGORY' | translate) : ('CATEGORIES.NEW_CATEGORY' | translate) }}</h2>
+        <button class="btn-close" (click)="closeForm()">×</button>
+      </div>
+      <form (ngSubmit)="saveCategory()" class="category-form">
+        <div class="form-group">
+          <label for="name">{{ 'COMMON.NAME' | translate }}</label>
+          <input type="text" id="name" [(ngModel)]="newCategory.name" name="name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="type">{{ 'CATEGORIES.TYPE' | translate }}</label>
+          <select id="type" [(ngModel)]="newCategory.type" name="type">
+            <option value="EXPENSE">{{ 'CATEGORY_TYPES.EXPENSE' | translate }}</option>
+            <option value="INCOME">{{ 'CATEGORY_TYPES.INCOME' | translate }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="color">{{ 'CATEGORIES.COLOR' | translate }}</label>
+          <div class="color-picker">
+            <input type="color" id="color" [(ngModel)]="newCategory.color" name="color">
+            <span class="color-value">{{ newCategory.color }}</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="submit" class="btn-primary">{{ editingCategory ? ('COMMON.SAVE' | translate) : ('COMMON.ADD' | translate) }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

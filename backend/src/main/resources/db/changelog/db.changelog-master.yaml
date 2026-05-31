@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-create-categories.yaml
+  - include:
+      file: db/changelog/002-create-b2b-configs.yaml
+  - include:
+      file: db/changelog/003-create-uop-configs.yaml
+  - include:
+      file: db/changelog/004-create-income-sources.yaml
+  - include:
+      file: db/changelog/005-create-expense-templates.yaml
+  - include:
+      file: db/changelog/006-create-expenses.yaml
+  - include:
+      file: db/changelog/007-create-incomes.yaml
+  - include:
+      file: db/changelog/008-create-budgets.yaml
+  - include:
+      file: db/changelog/009-add-amount-type.yaml
+  - include:
+      file: db/changelog/010-add-hourly-rate.yaml
+  - include:
+      file: db/changelog/011-add-actual-hours.yaml

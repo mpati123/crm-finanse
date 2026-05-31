@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-add-amount-type
+      author: crm-finanse
+      changes:
+        - renameColumn:
+            tableName: income_sources
+            oldColumnName: gross_amount
+            newColumnName: amount
+            columnDataType: decimal(10,2)
+        - addColumn:
+            tableName: income_sources
+            columns:
+              - column:
+                  name: amount_type
+                  type: varchar(50)
+                  defaultValue: 'GROSS'
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: "ALTER TABLE income_sources ADD CONSTRAINT chk_amount_type CHECK (amount_type IN ('GROSS', 'NET', 'FIXED'))"

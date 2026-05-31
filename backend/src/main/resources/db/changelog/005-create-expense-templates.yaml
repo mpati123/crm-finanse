@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-expense-templates
+      author: crm-finanse
+      changes:
+        - createTable:
+            tableName: expense_templates
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: decimal(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: frequency
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: day_of_month
+                  type: int
+              - column:
+                  name: active
+                  type: boolean
+                  defaultValueBoolean: true
+              - column:
+                  name: auto_pay
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: start_date
+                  type: date
+              - column:
+                  name: end_date
+                  type: date
+              - column:
+                  name: notes
+                  type: varchar(500)
+              - column:
+                  name: category_id
+                  type: bigint
+        - sql:
+            sql: "ALTER TABLE expense_templates ADD CONSTRAINT chk_expense_frequency CHECK (frequency IN ('MONTHLY', 'QUARTERLY', 'YEARLY', 'ONE_TIME'))"
+        - addForeignKeyConstraint:
+            baseTableName: expense_templates
+            baseColumnNames: category_id
+            referencedTableName: categories
+            referencedColumnNames: id
+            constraintName: fk_expense_templates_category

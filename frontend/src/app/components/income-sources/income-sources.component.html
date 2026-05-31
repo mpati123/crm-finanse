@@ -1,0 +1,408 @@
+<div class="income-sources-page">
+  <header class="page-header">
+    <h1>{{ 'INCOME_SOURCES.TITLE' | translate }}</h1>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="generateIncomes()">{{ 'INCOME_SOURCES.GENERATE_INCOMES' | translate }}</button>
+      <button class="btn-primary" (click)="openForm()">{{ 'INCOME_SOURCES.ADD_SOURCE' | translate }}</button>
+    </div>
+  </header>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span class="label">{{ 'INCOME_SOURCES.ACTIVE_SOURCES' | translate }}:</span>
+      <span class="value">{{ getActiveCount() }} / {{ incomeSources.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">{{ 'INCOME_SOURCES.TOTAL_GROSS' | translate }}:</span>
+      <span class="value">{{ formatCurrency(getTotalGross()) }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">{{ 'INCOME_SOURCES.TOTAL_NET' | translate }}:</span>
+      <span class="value">{{ formatCurrency(getTotalNet()) }}</span>
+    </div>
+    <div class="summary-item highlight">
+      <span class="label">{{ 'INCOME_SOURCES.TOTAL_ON_HAND' | translate }}:</span>
+      <span class="value total">{{ formatCurrency(getTotalOnHand()) }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'INCOME_SOURCES.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading && incomeSources.length === 0" class="empty-state">
+    <p>{{ 'INCOME_SOURCES.NO_SOURCES' | translate }}</p>
+    <button class="btn-primary" (click)="openForm()">{{ 'INCOME_SOURCES.ADD_FIRST' | translate }}</button>
+  </div>
+
+  <div *ngIf="!loading && incomeSources.length > 0" class="sources-grid">
+    <div *ngFor="let source of incomeSources" class="source-card" [class.inactive]="!source.active">
+      <div class="card-header">
+        <div class="source-info">
+          <h3>{{ source.name }}</h3>
+          <span class="type-badge" [attr.data-type]="source.incomeType">
+            {{ getIncomeTypeLabel(source.incomeType) }}
+          </span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [checked]="source.active" (change)="toggleActive(source)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="card-body">
+        <div *ngIf="source.personName" class="info-row">
+          <span class="label">{{ 'INCOME_SOURCES.PERSON' | translate }}:</span>
+          <span class="value">{{ source.personName }}</span>
+        </div>
+
+        <div class="amounts">
+          <div class="amount-item">
+            <span class="label">{{ getAmountTypeLabel(source) }}</span>
+            <span class="value">{{ formatCurrency(source.amount) }}</span>
+          </div>
+          <div *ngIf="source.rateType === 'HOURLY' && source.hourlyRate" class="amount-item hourly">
+            <span class="label">{{ 'INCOME_SOURCES.HOURLY_RATE_LABEL' | translate }}</span>
+            <span class="value">{{ formatCurrency(source.hourlyRate) }}/h</span>
+          </div>
+          <div *ngIf="source.rateType === 'HOURLY' && source.defaultHoursPerMonth" class="amount-item">
+            <span class="label">{{ 'INCOME_SOURCES.HOURS_PER_MONTH_LABEL' | translate }}</span>
+            <span class="value">{{ source.defaultHoursPerMonth }}h</span>
+          </div>
+          <div *ngIf="source.amountType !== 'FIXED'" class="amount-item net">
+            <span class="label">{{ 'INCOME_SOURCES.ON_HAND' | translate }}</span>
+            <span class="value">{{ formatCurrency(source.netAmount || source.amount) }}</span>
+          </div>
+          <div *ngIf="source.totalDeductions" class="amount-item deductions">
+            <span class="label">{{ 'INCOME_SOURCES.DEDUCTIONS' | translate }}</span>
+            <span class="value">-{{ formatCurrency(source.totalDeductions) }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="source.employmentFraction" class="info-row">
+          <span class="label">{{ 'INCOME_SOURCES.EMPLOYMENT_FRACTION_LABEL' | translate }}:</span>
+          <span class="value">{{ getEmploymentFractionLabel(source) }}</span>
+        </div>
+
+        <!-- B2B Config Details -->
+        <div *ngIf="source.incomeType === 'B2B' && source.b2bConfig" class="config-details">
+          <div *ngIf="source.b2bConfig.vatPayer && source.grossAmount" class="config-row gross-vat">
+            <span class="label">{{ 'INCOME_SOURCES.GROSS_WITH_VAT' | translate }}:</span>
+            <span class="value">{{ formatCurrency(source.grossAmount) }}</span>
+          </div>
+          <div class="config-row">
+            <span class="label">{{ 'INCOME_SOURCES.TAX_FORM' | translate }}:</span>
+            <span class="value">{{ source.b2bConfig.taxForm }}</span>
+          </div>
+          <div class="config-row">
+            <span class="label">{{ 'INCOME_SOURCES.ZUS' | translate }}:</span>
+            <span class="value">{{ source.b2bConfig.zusType }} ({{ formatCurrency(source.b2bConfig.zusAmount || 0) }})</span>
+          </div>
+          <div *ngIf="source.b2bConfig.vatPayer" class="config-row">
+            <span class="label">{{ 'INCOME_SOURCES.VAT' | translate }}:</span>
+            <span class="value">{{ source.b2bConfig.vatRate }}%</span>
+          </div>
+        </div>
+
+        <!-- UoP Config Details -->
+        <div *ngIf="source.incomeType === 'UOP' && source.uopConfig" class="config-details">
+          <div *ngIf="source.uopConfig.ppk" class="config-row">
+            <span class="label">{{ 'UOP_CONFIG.PPK' | translate }}:</span>
+            <span class="value">{{ source.uopConfig.ppkRate }}%</span>
+          </div>
+          <div *ngIf="source.uopConfig.authorCosts" class="config-row">
+            <span class="label">{{ 'INCOME_SOURCES.AUTHOR_COSTS' | translate }}:</span>
+            <span class="value">{{ source.uopConfig.authorCostsPercentage }}%</span>
+          </div>
+        </div>
+
+        <div *ngIf="source.paymentDayOfMonth" class="info-row">
+          <span class="label">{{ 'INCOME_SOURCES.PAYMENT_DAY' | translate }}:</span>
+          <span class="value">{{ source.paymentDayOfMonth }}. {{ 'INCOME_SOURCES.PAYMENT_DAY_SUFFIX' | translate }}</span>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-icon edit" (click)="openForm(source)" [title]="'COMMON.EDIT' | translate">{{ 'COMMON.EDIT' | translate }}</button>
+        <button class="btn-icon delete" (click)="deleteSource(source.id!)" [title]="'COMMON.DELETE' | translate">{{ 'COMMON.DELETE' | translate }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Form -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingSource ? ('INCOME_SOURCES.EDIT_SOURCE' | translate) : ('INCOME_SOURCES.NEW_SOURCE' | translate) }}</h2>
+        <button class="btn-close" (click)="closeForm()">&times;</button>
+      </div>
+      <form (ngSubmit)="saveSource()" class="source-form">
+        <!-- Basic Info -->
+        <div class="form-section">
+          <h3>{{ 'INCOME_SOURCES.BASIC_INFO' | translate }}</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">{{ 'INCOME_SOURCES.SOURCE_NAME' | translate }} *</label>
+              <input type="text" id="name" [(ngModel)]="newSource.name" name="name" required
+                     [placeholder]="'INCOME_SOURCES.SOURCE_NAME_PLACEHOLDER' | translate">
+            </div>
+            <div class="form-group">
+              <label for="personName">{{ 'INCOME_SOURCES.PERSON' | translate }}</label>
+              <input type="text" id="personName" [(ngModel)]="newSource.personName" name="personName"
+                     [placeholder]="'INCOME_SOURCES.PERSON_PLACEHOLDER' | translate">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="incomeType">{{ 'INCOME_SOURCES.INCOME_TYPE' | translate }} *</label>
+              <select id="incomeType" [(ngModel)]="newSource.incomeType" name="incomeType"
+                      (change)="onIncomeTypeChange()" required>
+                <option *ngFor="let type of incomeTypes" [value]="type.value">{{ type.label }}</option>
+              </select>
+            </div>
+            <div class="form-group" *ngIf="showAmountTypeSelector()">
+              <label for="amountType">{{ 'INCOME_SOURCES.AMOUNT_TYPE' | translate }}</label>
+              <select id="amountType" [(ngModel)]="newSource.amountType" name="amountType">
+                <option *ngFor="let type of amountTypes" [value]="type.value">{{ type.label }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" *ngIf="!isHourlyRate()">
+              <label for="amount">{{ getAmountLabel() }} ({{ 'COMMON.CURRENCY' | translate }}) *</label>
+              <input type="number" id="amount" [(ngModel)]="newSource.amount" name="amount"
+                     step="0.01" required>
+            </div>
+            <div class="form-group">
+              <label for="paymentDayOfMonth">{{ 'INCOME_SOURCES.PAYMENT_DAY' | translate }}</label>
+              <input type="number" id="paymentDayOfMonth" [(ngModel)]="newSource.paymentDayOfMonth"
+                     name="paymentDayOfMonth" min="1" max="31" placeholder="np. 10">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="category">{{ 'COMMON.CATEGORY' | translate }}</label>
+              <select id="category" [(ngModel)]="newSource.categoryId" name="categoryId">
+                <option [ngValue]="null">-- {{ 'CATEGORIES.NO_CATEGORY' | translate }} --</option>
+                <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate">{{ 'INCOME_SOURCES.DATE_FROM' | translate }}</label>
+              <input type="date" id="startDate" [(ngModel)]="newSource.startDate" name="startDate">
+            </div>
+            <div class="form-group">
+              <label for="endDate">{{ 'INCOME_SOURCES.DATE_TO' | translate }}</label>
+              <input type="date" id="endDate" [(ngModel)]="newSource.endDate" name="endDate">
+            </div>
+          </div>
+        </div>
+
+        <!-- Hourly Rate Section -->
+        <div *ngIf="showHourlyRateFields()" class="form-section hourly-rate-config">
+          <h3>{{ 'HOURLY_RATE.TITLE' | translate }}</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="rateType">{{ 'HOURLY_RATE.RATE_TYPE' | translate }}</label>
+              <select id="rateType" [(ngModel)]="newSource.rateType" name="rateType"
+                      (change)="onRateTypeChange()">
+                <option *ngFor="let type of rateTypes" [value]="type.value">{{ type.label }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="employmentFraction">{{ 'HOURLY_RATE.EMPLOYMENT_FRACTION' | translate }}</label>
+              <select id="employmentFraction" [(ngModel)]="newSource.employmentFraction" name="employmentFraction">
+                <option [ngValue]="null">-- {{ 'HOURLY_RATE.NOT_APPLICABLE' | translate }} --</option>
+                <option [ngValue]="1">{{ 'HOURLY_RATE.FULL_TIME' | translate }}</option>
+                <option [ngValue]="0.75">{{ 'HOURLY_RATE.THREE_QUARTERS' | translate }}</option>
+                <option [ngValue]="0.5">{{ 'HOURLY_RATE.HALF_TIME' | translate }}</option>
+                <option [ngValue]="0.25">{{ 'HOURLY_RATE.QUARTER_TIME' | translate }}</option>
+                <option [ngValue]="0.125">{{ 'HOURLY_RATE.EIGHTH_TIME' | translate }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div *ngIf="isHourlyRate()" class="form-row">
+            <div class="form-group">
+              <label for="hourlyRate">{{ 'HOURLY_RATE.HOURLY_RATE' | translate }} ({{ 'COMMON.CURRENCY' | translate }}) *</label>
+              <input type="number" id="hourlyRate" [(ngModel)]="newSource.hourlyRate" name="hourlyRate"
+                     step="0.01" min="0" [placeholder]="'HOURLY_RATE.HOURLY_RATE_PLACEHOLDER' | translate">
+            </div>
+            <div class="form-group">
+              <label for="defaultHoursPerMonth">{{ 'HOURLY_RATE.DEFAULT_HOURS' | translate }}</label>
+              <input type="number" id="defaultHoursPerMonth" [(ngModel)]="newSource.defaultHoursPerMonth"
+                     name="defaultHoursPerMonth" min="1" max="300" placeholder="168">
+            </div>
+          </div>
+
+          <div *ngIf="isHourlyRate() && newSource.hourlyRate && newSource.defaultHoursPerMonth" class="calculated-amount">
+            <span class="label">{{ 'HOURLY_RATE.ESTIMATED_MONTHLY' | translate }}:</span>
+            <span class="value">{{ formatCurrency(getCalculatedMonthlyAmount()) }}</span>
+          </div>
+        </div>
+
+        <!-- B2B Config -->
+        <div *ngIf="newSource.incomeType === 'B2B' && newSource.b2bConfig" class="form-section b2b-config">
+          <h3>{{ 'B2B_CONFIG.TITLE' | translate }}</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="taxForm">{{ 'B2B_CONFIG.TAX_FORM' | translate }} *</label>
+              <select id="taxForm" [(ngModel)]="newSource.b2bConfig.taxForm" name="taxForm" required>
+                <option *ngFor="let form of taxForms" [value]="form.value">{{ form.label }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="zusType">{{ 'B2B_CONFIG.ZUS_TYPE' | translate }} *</label>
+              <select id="zusType" [(ngModel)]="newSource.b2bConfig.zusType" name="zusType"
+                      (change)="onZusTypeChange()" required>
+                <option *ngFor="let zus of zusTypes" [value]="zus.value">
+                  {{ zus.label }} ({{ formatCurrency(zus.defaultAmount) }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="zusAmount">{{ 'B2B_CONFIG.ZUS_AMOUNT' | translate }} ({{ 'COMMON.CURRENCY' | translate }})</label>
+              <input type="number" id="zusAmount" [(ngModel)]="newSource.b2bConfig.zusAmount"
+                     name="zusAmount" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="healthInsurance">{{ 'B2B_CONFIG.HEALTH_INSURANCE' | translate }} ({{ 'COMMON.CURRENCY' | translate }})</label>
+              <input type="number" id="healthInsurance" [(ngModel)]="newSource.b2bConfig.healthInsurance"
+                     name="healthInsurance" step="0.01" [placeholder]="'B2B_CONFIG.HEALTH_INSURANCE_PLACEHOLDER' | translate">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group checkbox">
+              <label>
+                <input type="checkbox" [(ngModel)]="newSource.b2bConfig.vatPayer" name="vatPayer">
+                {{ 'B2B_CONFIG.VAT_PAYER' | translate }}
+              </label>
+            </div>
+            <div class="form-group" *ngIf="newSource.b2bConfig.vatPayer">
+              <label for="vatRate">{{ 'B2B_CONFIG.VAT_RATE' | translate }}</label>
+              <select id="vatRate" [(ngModel)]="newSource.b2bConfig.vatRate" name="vatRate">
+                <option [ngValue]="23">23%</option>
+                <option [ngValue]="8">8%</option>
+                <option [ngValue]="5">5%</option>
+                <option [ngValue]="0">0%</option>
+              </select>
+            </div>
+          </div>
+
+          <div *ngIf="newSource.b2bConfig.taxForm === 'RYCZALT'" class="form-row">
+            <div class="form-group">
+              <label for="ryczaltRate">{{ 'B2B_CONFIG.RYCZALT_RATE' | translate }}</label>
+              <select id="ryczaltRate" [(ngModel)]="newSource.b2bConfig.ryczaltRate" name="ryczaltRate">
+                <option [ngValue]="2">2%</option>
+                <option [ngValue]="3">3%</option>
+                <option [ngValue]="5.5">5.5%</option>
+                <option [ngValue]="8.5">8.5%</option>
+                <option [ngValue]="10">10%</option>
+                <option [ngValue]="12">12% ({{ 'INCOME_SOURCES.IT_CONSULTING' | translate }})</option>
+                <option [ngValue]="14">14%</option>
+                <option [ngValue]="15">15%</option>
+                <option [ngValue]="17">17%</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="incomeTaxAdvance">{{ 'B2B_CONFIG.INCOME_TAX_ADVANCE' | translate }} ({{ 'COMMON.CURRENCY' | translate }})</label>
+              <input type="number" id="incomeTaxAdvance" [(ngModel)]="newSource.b2bConfig.incomeTaxAdvance"
+                     name="incomeTaxAdvance" step="0.01" [placeholder]="'B2B_CONFIG.INCOME_TAX_ADVANCE_PLACEHOLDER' | translate">
+            </div>
+          </div>
+        </div>
+
+        <!-- UoP Config -->
+        <div *ngIf="newSource.incomeType === 'UOP' && newSource.uopConfig" class="form-section uop-config">
+          <h3>{{ 'UOP_CONFIG.TITLE' | translate }}</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="zusEmployee">{{ 'UOP_CONFIG.ZUS_EMPLOYEE' | translate }} ({{ 'COMMON.CURRENCY' | translate }})</label>
+              <input type="number" id="zusEmployee" [(ngModel)]="newSource.uopConfig.zusEmployee"
+                     name="zusEmployee" step="0.01" [placeholder]="'UOP_CONFIG.ZUS_EMPLOYEE_PLACEHOLDER' | translate">
+            </div>
+            <div class="form-group">
+              <label for="uopHealthInsurance">{{ 'UOP_CONFIG.HEALTH_INSURANCE' | translate }} ({{ 'COMMON.CURRENCY' | translate }})</label>
+              <input type="number" id="uopHealthInsurance" [(ngModel)]="newSource.uopConfig.healthInsurance"
+                     name="uopHealthInsurance" step="0.01" [placeholder]="'UOP_CONFIG.HEALTH_INSURANCE_PLACEHOLDER' | translate">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="incomeTax">{{ 'UOP_CONFIG.INCOME_TAX' | translate }} ({{ 'COMMON.CURRENCY' | translate }})</label>
+              <input type="number" id="incomeTax" [(ngModel)]="newSource.uopConfig.incomeTax"
+                     name="incomeTax" step="0.01" [placeholder]="'UOP_CONFIG.INCOME_TAX_PLACEHOLDER' | translate">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group checkbox">
+              <label>
+                <input type="checkbox" [(ngModel)]="newSource.uopConfig.ppk" name="ppk">
+                {{ 'UOP_CONFIG.PPK' | translate }}
+              </label>
+            </div>
+            <div class="form-group" *ngIf="newSource.uopConfig.ppk">
+              <label for="ppkRate">{{ 'UOP_CONFIG.PPK_RATE' | translate }}</label>
+              <select id="ppkRate" [(ngModel)]="newSource.uopConfig.ppkRate" name="ppkRate">
+                <option [ngValue]="2">2% ({{ 'UOP_CONFIG.PPK_BASIC' | translate }})</option>
+                <option [ngValue]="2.5">2.5%</option>
+                <option [ngValue]="3">3%</option>
+                <option [ngValue]="3.5">3.5%</option>
+                <option [ngValue]="4">4% ({{ 'UOP_CONFIG.PPK_MAX' | translate }})</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group checkbox">
+              <label>
+                <input type="checkbox" [(ngModel)]="newSource.uopConfig.authorCosts" name="authorCosts">
+                {{ 'UOP_CONFIG.AUTHOR_COSTS' | translate }}
+              </label>
+            </div>
+            <div class="form-group" *ngIf="newSource.uopConfig.authorCosts">
+              <label for="authorCostsPercentage">{{ 'UOP_CONFIG.AUTHOR_COSTS_PERCENTAGE' | translate }}</label>
+              <input type="number" id="authorCostsPercentage"
+                     [(ngModel)]="newSource.uopConfig.authorCostsPercentage"
+                     name="authorCostsPercentage" min="0" max="100" placeholder="50">
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-section">
+          <div class="form-group">
+            <label for="notes">{{ 'COMMON.NOTES' | translate }}</label>
+            <textarea id="notes" [(ngModel)]="newSource.notes" name="notes" rows="3"
+                      placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="submit" class="btn-primary">{{ editingSource ? ('COMMON.SAVE' | translate) : ('COMMON.ADD' | translate) }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

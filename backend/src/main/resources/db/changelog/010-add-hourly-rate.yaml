@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 010-add-hourly-rate
+      author: crm-finanse
+      changes:
+        - addColumn:
+            tableName: income_sources
+            columns:
+              - column:
+                  name: rate_type
+                  type: varchar(50)
+                  defaultValue: 'MONTHLY'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: hourly_rate
+                  type: decimal(10,2)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: default_hours_per_month
+                  type: int
+                  constraints:
+                    nullable: true
+              - column:
+                  name: employment_fraction
+                  type: decimal(5,2)
+                  constraints:
+                    nullable: true
+        - sql:
+            sql: "ALTER TABLE income_sources ADD CONSTRAINT chk_rate_type CHECK (rate_type IN ('MONTHLY', 'HOURLY'))"

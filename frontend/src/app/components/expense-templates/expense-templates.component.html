@@ -1,0 +1,160 @@
+<div class="expense-templates-page">
+  <header class="page-header">
+    <h1>{{ 'EXPENSE_TEMPLATES.TITLE' | translate }}</h1>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="generateExpenses()">{{ 'EXPENSE_TEMPLATES.GENERATE_EXPENSES' | translate }}</button>
+      <button class="btn-primary" (click)="openForm()">+ {{ 'EXPENSE_TEMPLATES.ADD_TEMPLATE' | translate }}</button>
+    </div>
+  </header>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span class="label">{{ 'EXPENSE_TEMPLATES.ACTIVE_TEMPLATES' | translate }}:</span>
+      <span class="value">{{ getActiveCount() }} / {{ templates.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">{{ 'EXPENSE_TEMPLATES.TOTAL_MONTHLY' | translate }}:</span>
+      <span class="value total expense">{{ formatCurrency(getTotalMonthly()) }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'EXPENSE_TEMPLATES.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading && templates.length === 0" class="empty-state">
+    <p>{{ 'EXPENSE_TEMPLATES.NO_TEMPLATES' | translate }}</p>
+    <button class="btn-primary" (click)="openForm()">{{ 'EXPENSE_TEMPLATES.ADD_FIRST' | translate }}</button>
+  </div>
+
+  <div *ngIf="!loading && templates.length > 0" class="templates-table">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'COMMON.NAME' | translate }}</th>
+          <th>{{ 'COMMON.CATEGORY' | translate }}</th>
+          <th>{{ 'COMMON.AMOUNT' | translate }}</th>
+          <th>{{ 'EXPENSE_TEMPLATES.FREQUENCY' | translate }}</th>
+          <th>{{ 'EXPENSE_TEMPLATES.DAY_OF_MONTH' | translate }}</th>
+          <th>{{ 'COMMON.ACTIVE' | translate }}</th>
+          <th>{{ 'EXPENSE_TEMPLATES.AUTO_PAY' | translate }}</th>
+          <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let template of templates" [class.inactive]="!template.active">
+          <td class="name-cell">
+            <span class="name">{{ template.name }}</span>
+            <span *ngIf="template.notes" class="has-notes" title="{{ template.notes }}">i</span>
+          </td>
+          <td>{{ template.categoryName || '-' }}</td>
+          <td class="amount-cell">{{ formatCurrency(template.amount) }}</td>
+          <td>
+            <span class="frequency-badge" [attr.data-freq]="template.frequency">
+              {{ getFrequencyLabel(template.frequency) }}
+            </span>
+          </td>
+          <td>{{ template.dayOfMonth || '-' }}</td>
+          <td>
+            <label class="toggle-switch small">
+              <input type="checkbox" [checked]="template.active" (change)="toggleActive(template)">
+              <span class="slider"></span>
+            </label>
+          </td>
+          <td>
+            <span *ngIf="template.autoPay" class="autopay-badge">Auto</span>
+            <span *ngIf="!template.autoPay" class="no-autopay">-</span>
+          </td>
+          <td class="actions-cell">
+            <button class="btn-icon edit" (click)="openForm(template)" [title]="'COMMON.EDIT' | translate">{{ 'COMMON.EDIT' | translate }}</button>
+            <button class="btn-icon delete" (click)="deleteTemplate(template.id!)" [title]="'COMMON.DELETE' | translate">{{ 'COMMON.DELETE' | translate }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Form -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingTemplate ? ('EXPENSE_TEMPLATES.EDIT_TEMPLATE' | translate) : ('EXPENSE_TEMPLATES.NEW_TEMPLATE' | translate) }}</h2>
+        <button class="btn-close" (click)="closeForm()">&times;</button>
+      </div>
+      <form (ngSubmit)="saveTemplate()" class="template-form">
+        <div class="form-group">
+          <label for="name">{{ 'COMMON.NAME' | translate }} *</label>
+          <input type="text" id="name" [(ngModel)]="newTemplate.name" name="name" required
+                 [placeholder]="'EXPENSE_TEMPLATES.NAME_PLACEHOLDER' | translate">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="amount">{{ 'COMMON.AMOUNT' | translate }} (PLN) *</label>
+            <input type="number" id="amount" [(ngModel)]="newTemplate.amount" name="amount"
+                   step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label for="category">{{ 'COMMON.CATEGORY' | translate }}</label>
+            <select id="category" [(ngModel)]="newTemplate.categoryId" name="categoryId">
+              <option [ngValue]="null">{{ 'EXPENSE_TEMPLATES.NO_CATEGORY' | translate }}</option>
+              <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="frequency">{{ 'EXPENSE_TEMPLATES.FREQUENCY' | translate }} *</label>
+            <select id="frequency" [(ngModel)]="newTemplate.frequency" name="frequency" required>
+              <option *ngFor="let freq of frequencies" [value]="freq.value">{{ freq.label }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="dayOfMonth">{{ 'EXPENSE_TEMPLATES.DAY_OF_MONTH' | translate }}</label>
+            <input type="number" id="dayOfMonth" [(ngModel)]="newTemplate.dayOfMonth"
+                   name="dayOfMonth" min="1" max="31" placeholder="e.g. 10">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="startDate">{{ 'EXPENSE_TEMPLATES.DATE_FROM' | translate }}</label>
+            <input type="date" id="startDate" [(ngModel)]="newTemplate.startDate" name="startDate">
+          </div>
+          <div class="form-group">
+            <label for="endDate">{{ 'EXPENSE_TEMPLATES.DATE_TO' | translate }}</label>
+            <input type="date" id="endDate" [(ngModel)]="newTemplate.endDate" name="endDate">
+          </div>
+        </div>
+
+        <div class="form-row checkboxes">
+          <div class="form-group checkbox">
+            <label>
+              <input type="checkbox" [(ngModel)]="newTemplate.active" name="active">
+              {{ 'COMMON.ACTIVE' | translate }}
+            </label>
+          </div>
+          <div class="form-group checkbox">
+            <label>
+              <input type="checkbox" [(ngModel)]="newTemplate.autoPay" name="autoPay">
+              {{ 'EXPENSE_TEMPLATES.AUTO_PAY_LABEL' | translate }}
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">{{ 'COMMON.NOTES' | translate }}</label>
+          <textarea id="notes" [(ngModel)]="newTemplate.notes" name="notes" rows="3"
+                    [placeholder]="'EXPENSE_TEMPLATES.NOTES_PLACEHOLDER' | translate"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="submit" class="btn-primary">{{ editingTemplate ? ('COMMON.SAVE' | translate) : ('COMMON.ADD' | translate) }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

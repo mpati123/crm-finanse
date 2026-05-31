@@ -1,0 +1,124 @@
+<div class="budget-page">
+  <header class="page-header">
+    <h1>Budżet miesięczny</h1>
+    <div class="header-actions">
+      <div class="date-selector">
+        <select [(ngModel)]="selectedMonth" (change)="onMonthChange()">
+          <option *ngFor="let month of months" [value]="month.value">{{ month.name }}</option>
+        </select>
+        <select [(ngModel)]="selectedYear" (change)="onMonthChange()">
+          <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+        </select>
+      </div>
+      <button class="btn-primary" (click)="openForm()">+ Dodaj budżet</button>
+    </div>
+  </header>
+
+  <div class="summary-cards">
+    <div class="summary-card">
+      <h3>Zaplanowano</h3>
+      <p class="amount planned">{{ formatCurrency(getTotalPlanned()) }}</p>
+    </div>
+    <div class="summary-card">
+      <h3>Wydano</h3>
+      <p class="amount actual">{{ formatCurrency(getTotalActual()) }}</p>
+    </div>
+    <div class="summary-card">
+      <h3>Pozostało</h3>
+      <p class="amount" [class.positive]="getTotalPlanned() - getTotalActual() >= 0"
+         [class.negative]="getTotalPlanned() - getTotalActual() < 0">
+        {{ formatCurrency(getTotalPlanned() - getTotalActual()) }}
+      </p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Ładowanie budżetu...</p>
+  </div>
+
+  <div *ngIf="!loading && budgets.length === 0" class="empty-state">
+    <p>Brak zaplanowanych budżetów na ten miesiąc</p>
+    <button class="btn-primary" (click)="openForm()">Zaplanuj budżet</button>
+  </div>
+
+  <div *ngIf="!loading && budgets.length > 0" class="budget-list">
+    <div *ngFor="let budget of budgets" class="budget-card" [class]="getProgressClass(budget)">
+      <div class="budget-header">
+        <h3>{{ budget.categoryName || 'Ogólny' }}</h3>
+        <div class="budget-actions">
+          <button class="btn-icon" (click)="openForm(budget)">✏️</button>
+          <button class="btn-icon delete" (click)="deleteBudget(budget.id!)">🗑️</button>
+        </div>
+      </div>
+
+      <div class="budget-amounts">
+        <div class="amount-item">
+          <span class="label">Plan:</span>
+          <span class="value">{{ formatCurrency(budget.plannedAmount) }}</span>
+        </div>
+        <div class="amount-item">
+          <span class="label">Wydano:</span>
+          <span class="value">{{ formatCurrency(budget.actualAmount || 0) }}</span>
+        </div>
+        <div class="amount-item">
+          <span class="label">Różnica:</span>
+          <span class="value" [class.positive]="(budget.difference || 0) >= 0" [class.negative]="(budget.difference || 0) < 0">
+            {{ formatCurrency(budget.difference || 0) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress" [style.width.%]="Math.min(budget.percentageUsed || 0, 100)"></div>
+        </div>
+        <span class="percentage">{{ (budget.percentageUsed || 0) | number:'1.0-0' }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Form -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingBudget ? 'Edytuj budżet' : 'Nowy budżet' }}</h2>
+        <button class="btn-close" (click)="closeForm()">×</button>
+      </div>
+      <form (ngSubmit)="saveBudget()" class="budget-form">
+        <div class="form-group">
+          <label for="category">Kategoria</label>
+          <select id="category" [(ngModel)]="newBudget.categoryId" name="categoryId">
+            <option [ngValue]="null">-- Budżet ogólny --</option>
+            <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="month">Miesiąc</label>
+            <select id="month" [(ngModel)]="newBudget.month" name="month">
+              <option *ngFor="let m of months" [ngValue]="m.value">{{ m.name }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="year">Rok</label>
+            <select id="year" [(ngModel)]="newBudget.year" name="year">
+              <option *ngFor="let y of years" [ngValue]="y">{{ y }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Planowana kwota (PLN)</label>
+          <input type="number" id="amount" [(ngModel)]="newBudget.plannedAmount" name="plannedAmount" step="0.01" required>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">Anuluj</button>
+          <button type="submit" class="btn-primary">{{ editingBudget ? 'Zapisz' : 'Dodaj' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

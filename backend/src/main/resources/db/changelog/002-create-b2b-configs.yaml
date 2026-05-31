@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-b2b-configs
+      author: crm-finanse
+      changes:
+        - createTable:
+            tableName: b2b_configs
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tax_form
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: zus_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: zus_amount
+                  type: decimal(10,2)
+              - column:
+                  name: health_insurance
+                  type: decimal(10,2)
+              - column:
+                  name: income_tax_advance
+                  type: decimal(10,2)
+              - column:
+                  name: vat_payer
+                  type: boolean
+              - column:
+                  name: vat_rate
+                  type: int
+              - column:
+                  name: ryczalt_rate
+                  type: decimal(5,2)
+        - sql:
+            sql: "ALTER TABLE b2b_configs ADD CONSTRAINT chk_b2b_tax_form CHECK (tax_form IN ('SKALA', 'LINIOWY', 'RYCZALT'))"
+        - sql:
+            sql: "ALTER TABLE b2b_configs ADD CONSTRAINT chk_b2b_zus_type CHECK (zus_type IN ('PELNY', 'MALY_ZUS', 'MALY_ZUS_PLUS', 'PREFERENCYJNY', 'ULGA_NA_START', 'BEZ_ZUS'))"

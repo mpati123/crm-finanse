@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-add-actual-hours
+      author: crm-finanse
+      changes:
+        - addColumn:
+            tableName: incomes
+            columns:
+              - column:
+                  name: actual_hours
+                  type: INTEGER
+                  constraints:
+                    nullable: true
+              - column:
+                  name: overtime_hours_100
+                  type: INTEGER
+                  constraints:
+                    nullable: true
+              - column:
+                  name: overtime_hours_150
+                  type: INTEGER
+                  constraints:
+                    nullable: true
+              - column:
+                  name: overtime_hours_200
+                  type: INTEGER
+                  constraints:
+                    nullable: true
+              - column:
+                  name: income_source_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: incomes
+            baseColumnNames: income_source_id
+            referencedTableName: income_sources
+            referencedColumnNames: id
+            constraintName: fk_income_source
+            onDelete: SET NULL

@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-uop-configs
+      author: crm-finanse
+      changes:
+        - createTable:
+            tableName: uop_configs
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: zus_employee
+                  type: decimal(10,2)
+              - column:
+                  name: health_insurance
+                  type: decimal(10,2)
+              - column:
+                  name: income_tax
+                  type: decimal(10,2)
+              - column:
+                  name: ppk
+                  type: boolean
+              - column:
+                  name: ppk_rate
+                  type: decimal(5,2)
+              - column:
+                  name: author_costs
+                  type: boolean
+              - column:
+                  name: author_costs_percentage
+                  type: decimal(5,2)

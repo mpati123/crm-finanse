@@ -1,0 +1,145 @@
+<div class="incomes-page">
+  <header class="page-header">
+    <h1>{{ 'INCOMES.TITLE' | translate }}</h1>
+    <div class="header-actions">
+      <div class="date-selector">
+        <select [(ngModel)]="selectedMonth" (ngModelChange)="onMonthChange()">
+          <option *ngFor="let month of months" [ngValue]="month.value">{{ month.key | translate }}</option>
+        </select>
+        <select [(ngModel)]="selectedYear" (ngModelChange)="onMonthChange()">
+          <option *ngFor="let year of years" [ngValue]="year">{{ year }}</option>
+        </select>
+      </div>
+      <button class="btn-primary" (click)="openForm()">+ {{ 'INCOMES.ADD_INCOME' | translate }}</button>
+    </div>
+  </header>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span class="label">{{ 'EXPENSES.COUNT' | translate }}:</span>
+      <span class="value">{{ incomes.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">{{ 'EXPENSES.SUM' | translate }}:</span>
+      <span class="value total">{{ formatCurrency(getTotalAmount()) }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'COMMON.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading && incomes.length === 0" class="empty-state">
+    <p>{{ 'INCOMES.NO_INCOMES' | translate }}</p>
+    <button class="btn-primary" (click)="openForm()">{{ 'INCOMES.ADD_INCOME' | translate }}</button>
+  </div>
+
+  <div *ngIf="!loading && incomes.length > 0" class="incomes-table">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'COMMON.NAME' | translate }}</th>
+          <th>{{ 'COMMON.CATEGORY' | translate }}</th>
+          <th>{{ 'COMMON.AMOUNT' | translate }}</th>
+          <th>{{ 'COMMON.DATE' | translate }}</th>
+          <th>{{ 'COMMON.ACTIONS' | translate }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let income of incomes">
+          <td class="name-cell">
+            <span class="name">{{ income.name }}</span>
+            <span *ngIf="income.recurring" class="recurring-badge">{{ 'INCOMES.RECURRING' | translate }}</span>
+            <span *ngIf="income.estimated" class="estimated-badge">{{ 'INCOMES.ESTIMATED' | translate }}</span>
+          </td>
+          <td>{{ income.categoryName || '-' }}</td>
+          <td class="amount-cell">{{ formatCurrency(income.amount) }}</td>
+          <td>{{ income.date | date:'dd.MM.yyyy' }}</td>
+          <td class="actions-cell">
+            <button class="btn-icon edit" (click)="openForm(income)" [title]="'COMMON.EDIT' | translate">✏️</button>
+            <button class="btn-icon delete" (click)="deleteIncome(income.id!)" [title]="'COMMON.DELETE' | translate">🗑️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Form -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ (editingIncome ? 'INCOMES.EDIT_INCOME' : 'INCOMES.NEW_INCOME') | translate }}</h2>
+        <button class="btn-close" (click)="closeForm()">×</button>
+      </div>
+      <form (ngSubmit)="saveIncome()" class="income-form">
+        <div class="form-group">
+          <label for="name">{{ 'COMMON.NAME' | translate }}</label>
+          <input type="text" id="name" [(ngModel)]="newIncome.name" name="name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="amount">{{ 'COMMON.AMOUNT' | translate }} ({{ 'COMMON.CURRENCY' | translate }})</label>
+          <input type="number" id="amount" [(ngModel)]="newIncome.amount" name="amount" step="0.01" required>
+        </div>
+
+        <div class="form-group">
+          <label for="category">{{ 'COMMON.CATEGORY' | translate }}</label>
+          <select id="category" [(ngModel)]="newIncome.categoryId" name="categoryId">
+            <option [ngValue]="null">-- {{ 'CATEGORIES.NO_CATEGORY' | translate }} --</option>
+            <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="date">{{ 'COMMON.DATE' | translate }}</label>
+          <input type="date" id="date" [(ngModel)]="newIncome.date" name="date" required>
+        </div>
+
+        <div class="form-group checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="newIncome.recurring" name="recurring">
+            {{ 'INCOMES.RECURRING' | translate }}
+          </label>
+        </div>
+
+        <div class="form-group checkbox">
+          <label>
+            <input type="checkbox" [(ngModel)]="newIncome.estimated" name="estimated">
+            {{ 'INCOMES.ESTIMATED' | translate }}
+          </label>
+        </div>
+
+        <div class="form-group" *ngIf="newIncome.actualHours !== undefined">
+          <label for="actualHours">{{ 'INCOMES.ACTUAL_HOURS' | translate }}</label>
+          <input type="number" id="actualHours" [(ngModel)]="newIncome.actualHours" name="actualHours" min="0">
+        </div>
+
+        <div class="form-group" *ngIf="newIncome.actualHours !== undefined">
+          <label for="overtimeHours100">{{ 'INCOMES.OVERTIME_100' | translate }}</label>
+          <input type="number" id="overtimeHours100" [(ngModel)]="newIncome.overtimeHours100" name="overtimeHours100" min="0">
+        </div>
+
+        <div class="form-group" *ngIf="newIncome.actualHours !== undefined">
+          <label for="overtimeHours150">{{ 'INCOMES.OVERTIME_150' | translate }}</label>
+          <input type="number" id="overtimeHours150" [(ngModel)]="newIncome.overtimeHours150" name="overtimeHours150" min="0">
+        </div>
+
+        <div class="form-group" *ngIf="newIncome.actualHours !== undefined">
+          <label for="overtimeHours200">{{ 'INCOMES.OVERTIME_200' | translate }}</label>
+          <input type="number" id="overtimeHours200" [(ngModel)]="newIncome.overtimeHours200" name="overtimeHours200" min="0">
+        </div>
+
+        <div class="form-group">
+          <label for="notes">{{ 'COMMON.NOTES' | translate }}</label>
+          <textarea id="notes" [(ngModel)]="newIncome.notes" name="notes" rows="3"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">{{ 'COMMON.CANCEL' | translate }}</button>
+          <button type="submit" class="btn-primary">{{ (editingIncome ? 'COMMON.SAVE' : 'COMMON.ADD') | translate }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

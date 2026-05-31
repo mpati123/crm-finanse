@@ -1,0 +1,117 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1>{{ 'DASHBOARD.TITLE' | translate }}</h1>
+    <div class="date-selector">
+      <select [(ngModel)]="selectedMonth" (change)="onMonthChange()">
+        <option *ngFor="let month of months" [value]="month.value">{{ month.key | translate }}</option>
+      </select>
+      <select [(ngModel)]="selectedYear" (change)="onMonthChange()">
+        <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+      </select>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'COMMON.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button (click)="loadDashboard()">{{ 'DASHBOARD.TRY_AGAIN' | translate }}</button>
+  </div>
+
+  <div *ngIf="dashboard && !loading" class="dashboard-content">
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="card income">
+        <div class="card-icon">📈</div>
+        <div class="card-content">
+          <h3>{{ 'DASHBOARD.INCOME' | translate }}</h3>
+          <p class="amount">{{ formatCurrency(dashboard.totalIncome) }}</p>
+        </div>
+      </div>
+
+      <div class="card expenses">
+        <div class="card-icon">📉</div>
+        <div class="card-content">
+          <h3>{{ 'DASHBOARD.EXPENSES' | translate }}</h3>
+          <p class="amount">{{ formatCurrency(dashboard.totalExpenses) }}</p>
+        </div>
+      </div>
+
+      <div class="card balance" [class.positive]="dashboard.balance >= 0" [class.negative]="dashboard.balance < 0">
+        <div class="card-icon">💰</div>
+        <div class="card-content">
+          <h3>{{ 'DASHBOARD.BALANCE' | translate }}</h3>
+          <p class="amount">{{ formatCurrency(dashboard.balance) }}</p>
+        </div>
+      </div>
+
+      <div class="card pending">
+        <div class="card-icon">⏳</div>
+        <div class="card-content">
+          <h3>{{ 'DASHBOARD.PENDING_PAYMENTS' | translate }}</h3>
+          <p class="amount">{{ formatCurrency(dashboard.pendingPayments) }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yearly Summary -->
+    <div class="yearly-summary">
+      <h2>{{ 'DASHBOARD.YEARLY_SUMMARY' | translate }} ({{ selectedYear }})</h2>
+      <div class="summary-cards yearly">
+        <div class="card income">
+          <div class="card-icon">📊</div>
+          <div class="card-content">
+            <h3>{{ 'DASHBOARD.YEARLY_INCOME' | translate }}</h3>
+            <p class="amount">{{ formatCurrency(dashboard.yearlyIncome) }}</p>
+          </div>
+        </div>
+
+        <div class="card expenses">
+          <div class="card-icon">📋</div>
+          <div class="card-content">
+            <h3>{{ 'DASHBOARD.YEARLY_EXPENSES' | translate }}</h3>
+            <p class="amount">{{ formatCurrency(dashboard.yearlyExpenses) }}</p>
+          </div>
+        </div>
+
+        <div class="card balance" [class.positive]="dashboard.yearlyBalance >= 0" [class.negative]="dashboard.yearlyBalance < 0">
+          <div class="card-icon">🏦</div>
+          <div class="card-content">
+            <h3>{{ 'DASHBOARD.YEARLY_BALANCE' | translate }}</h3>
+            <p class="amount">{{ formatCurrency(dashboard.yearlyBalance) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-container">
+      <div class="chart-card">
+        <canvas #pieChart></canvas>
+      </div>
+      <div class="chart-card">
+        <canvas #barChart></canvas>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="category-breakdown" *ngIf="dashboard.expensesByCategory?.length">
+      <h2>{{ 'DASHBOARD.EXPENSE_DETAILS' | translate }}</h2>
+      <div class="category-list">
+        <div class="category-item" *ngFor="let cat of dashboard.expensesByCategory">
+          <div class="category-info">
+            <span class="category-name">{{ cat.categoryName }}</span>
+            <span class="category-percentage">{{ cat.percentage | number:'1.1-1' }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress" [style.width.%]="cat.percentage"></div>
+          </div>
+          <span class="category-amount">{{ formatCurrency(cat.amount) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

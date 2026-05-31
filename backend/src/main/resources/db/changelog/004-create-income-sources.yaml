@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-income-sources
+      author: crm-finanse
+      changes:
+        - createTable:
+            tableName: income_sources
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: person_name
+                  type: varchar(255)
+              - column:
+                  name: income_type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: gross_amount
+                  type: decimal(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: boolean
+                  defaultValueBoolean: true
+              - column:
+                  name: payment_day_of_month
+                  type: int
+              - column:
+                  name: start_date
+                  type: date
+              - column:
+                  name: end_date
+                  type: date
+              - column:
+                  name: notes
+                  type: varchar(500)
+              - column:
+                  name: category_id
+                  type: bigint
+              - column:
+                  name: b2b_config_id
+                  type: bigint
+              - column:
+                  name: uop_config_id
+                  type: bigint
+        - sql:
+            sql: "ALTER TABLE income_sources ADD CONSTRAINT chk_income_type CHECK (income_type IN ('UOP', 'UMOWA_ZLECENIE', 'UMOWA_O_DZIELO', 'B2B', 'SWIADCZENIE', 'CZYNSZ', 'INNE'))"
+        - addForeignKeyConstraint:
+            baseTableName: income_sources
+            baseColumnNames: category_id
+            referencedTableName: categories
+            referencedColumnNames: id
+            constraintName: fk_income_sources_category
+        - addForeignKeyConstraint:
+            baseTableName: income_sources
+            baseColumnNames: b2b_config_id
+            referencedTableName: b2b_configs
+            referencedColumnNames: id
+            constraintName: fk_income_sources_b2b_config
+        - addForeignKeyConstraint:
+            baseTableName: income_sources
+            baseColumnNames: uop_config_id
+            referencedTableName: uop_configs
+            referencedColumnNames: id
+            constraintName: fk_income_sources_uop_config
+        - addUniqueConstraint:
+            tableName: income_sources
+            columnNames: b2b_config_id
+            constraintName: uk_income_sources_b2b_config
+        - addUniqueConstraint:
+            tableName: income_sources
+            columnNames: uop_config_id
+            constraintName: uk_income_sources_uop_config

@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-create-expenses
+      author: crm-finanse
+      changes:
+        - createTable:
+            tableName: expenses
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: decimal(10,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_recurring
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: notes
+                  type: varchar(500)
+              - column:
+                  name: category_id
+                  type: bigint
+        - sql:
+            sql: "ALTER TABLE expenses ADD CONSTRAINT chk_expense_status CHECK (status IN ('PAID', 'PENDING', 'REMAINING'))"
+        - addForeignKeyConstraint:
+            baseTableName: expenses
+            baseColumnNames: category_id
+            referencedTableName: categories
+            referencedColumnNames: id
+            constraintName: fk_expenses_category
