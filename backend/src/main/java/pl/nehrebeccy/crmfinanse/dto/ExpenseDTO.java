@@ -37,4 +37,5 @@ public class ExpenseDTO {
 
     private String notes;
     private boolean recurring;
+    private Long expenseTemplateId;
 }

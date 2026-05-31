@@ -44,6 +44,7 @@ public class Income {
 
     @Column(name = "net_amount", precision = 10, scale = 2)
     private BigDecimal netAmount;
+@Column(name = "actual_amount", precision = 10, scale = 2)    private BigDecimal actualAmount;
 
     @Column(name = "actual_hours")
     private Integer actualHours;

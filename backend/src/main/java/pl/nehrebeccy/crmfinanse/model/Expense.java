@@ -27,6 +27,15 @@ public class Expense {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
+    @Column(name = "net_amount", precision = 10, scale = 2)
+    private BigDecimal netAmount;
+
+    @Column(name = "vat_rate")
+    private Integer vatRate;
+
+    @Column(name = "vat_amount", precision = 10, scale = 2)
+    private BigDecimal vatAmount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
@@ -42,6 +51,9 @@ public class Expense {
 
     @Column(name = "is_recurring")
     private boolean recurring;
+
+    @Column(name = "expense_template_id")
+    private Long expenseTemplateId;
 
     public enum PaymentStatus {
         PAID,       // opłacone (t)

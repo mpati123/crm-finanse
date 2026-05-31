@@ -28,6 +28,11 @@ public class IncomeController {
         return ResponseEntity.ok(incomeService.getIncomesByMonth(year, month));
     }
 
+    @GetMapping("/source/{sourceId}/year/{year}")
+    public ResponseEntity<List<IncomeDTO>> getIncomesBySourceAndYear(@PathVariable Long sourceId, @PathVariable int year) {
+        return ResponseEntity.ok(incomeService.getIncomesBySourceAndYear(sourceId, year));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<IncomeDTO> getIncomeById(@PathVariable Long id) {
         return ResponseEntity.ok(incomeService.getIncomeById(id));

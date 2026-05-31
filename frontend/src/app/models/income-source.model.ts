@@ -3,6 +3,7 @@ export type TaxForm = 'SKALA' | 'LINIOWY' | 'RYCZALT';
 export type ZUSType = 'PELNY' | 'MALY_ZUS' | 'MALY_ZUS_PLUS' | 'PREFERENCYJNY' | 'ULGA_NA_START' | 'BEZ_ZUS';
 export type AmountType = 'GROSS' | 'NET' | 'FIXED';
 export type RateType = 'MONTHLY' | 'HOURLY';
+export type CostRateType = 'STANDARD_20' | 'AUTHOR_50' | 'CUSTOM';
 
 export interface B2BConfig {
   id?: number;
@@ -27,6 +28,26 @@ export interface UoPConfig {
   authorCostsPercentage?: number;
 }
 
+export interface UmowaZlecenieConfig {
+  id?: number;
+  withZus: boolean;
+  zusAmount?: number;
+  healthInsurance?: number;
+  incomeTax?: number;
+  costRateType: CostRateType;
+  customCostRate?: number;
+  pit2: boolean;
+  ppk: boolean;
+  ppkRate?: number;
+}
+
+export interface UmowaODzieloConfig {
+  id?: number;
+  incomeTax?: number;
+  costRateType: CostRateType;
+  customCostRate?: number;
+}
+
 export interface IncomeSource {
   id?: number;
   name: string;
@@ -46,6 +67,8 @@ export interface IncomeSource {
   categoryName?: string;
   b2bConfig?: B2BConfig;
   uopConfig?: UoPConfig;
+  umowaZlecenieConfig?: UmowaZlecenieConfig;
+  umowaODzieloConfig?: UmowaODzieloConfig;
   notes?: string;
   // Wyliczone
   grossAmount?: number; // kwota brutto z VAT (dla B2B)

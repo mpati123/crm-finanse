@@ -86,7 +86,8 @@
     "VAT": "VAT",
     "AUTHOR_COSTS": "Author costs",
     "IT_CONSULTING": "IT, consulting",
-    "NET_INVOICE": "Net (invoice)"
+    "NET_INVOICE": "Net (invoice)",
+    "YEARLY_PROJECTION": "Yearly Projection"
   },
   "INCOME_TYPES": {
     "UOP": "Employment Contract",

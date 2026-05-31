@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 013-clear-transactions-data
+      author: claude
+      comment: "Czyszczenie istniejących transakcji aby przetestować poprawioną logikę generowania"
+      changes:
+        - delete:
+            tableName: incomes
+        - delete:
+            tableName: expenses

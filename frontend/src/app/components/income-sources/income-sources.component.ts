@@ -33,6 +33,13 @@ export class IncomeSourcesComponent implements OnInit {
   loading = false;
   showForm = false;
   editingSource: IncomeSource | null = null;
+  showYearlySimulation = false;
+  yearlySimulationData: number[] = [];
+  taxScenariosData: {[key: string]: number[]} = {};
+  selectedSourceForSimulation: IncomeSource | null = null;
+  simulationYear: number = new Date().getFullYear();
+  years: number[] = this.generateYearsArray();
+  showComparisonView = false;
 
   newSource: IncomeSource = this.getEmptySource();
 
@@ -339,5 +346,146 @@ export class IncomeSourcesComponent implements OnInit {
       return `${this.formatCurrency(source.hourlyRate)}${this.translate.instant('HOURLY_RATE.PER_HOUR')}`;
     }
     return '';
+  }
+
+  openYearlySimulation(source: IncomeSource): void {
+    if (!source.id) return;
+    this.selectedSourceForSimulation = source;
+    this.simulationYear = new Date().getFullYear();
+    this.loadYearlySimulation(source.id, this.simulationYear);
+  }
+
+  loadYearlySimulation(sourceId: number, year: number): void {
+    // Load both yearly simulation and tax scenarios
+    this.apiService.getYearlySimulation(sourceId, year).subscribe({
+      next: (data) => {
+        this.yearlySimulationData = data;
+      },
+      error: (err) => console.error('Error loading yearly simulation:', err)
+    });
+
+    this.apiService.getTaxScenarios(sourceId, year).subscribe({
+      next: (data) => {
+        console.log('Tax scenarios data received:', data);
+        console.log('Scenario keys:', Object.keys(data));
+        this.taxScenariosData = data;
+        this.showYearlySimulation = true;
+      },
+      error: (err) => console.error('Error loading tax scenarios:', err)
+    });
+  }
+
+  closeYearlySimulation(): void {
+    this.showYearlySimulation = false;
+    this.selectedSourceForSimulation = null;
+    this.showComparisonView = false;
+  }
+
+  toggleComparisonView(): void {
+    this.showComparisonView = !this.showComparisonView;
+  }
+
+  onSimulationYearChange(): void {
+    if (this.selectedSourceForSimulation?.id) {
+      this.loadYearlySimulation(this.selectedSourceForSimulation.id, this.simulationYear);
+    }
+  }
+
+  getMonthlyTotal(monthIndex: number): number {
+    return this.yearlySimulationData[monthIndex] || 0;
+  }
+
+  getYearlyTotal(): number {
+    return this.yearlySimulationData.reduce((sum, val) => sum + (val || 0), 0);
+  }
+
+  getMonthName(monthIndex: number): string {
+    const monthKeys = [
+      'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+      'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+    ];
+    return this.translate.instant(`MONTHS.${monthKeys[monthIndex]}`);
+  }
+
+  generateYearsArray(): number[] {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = -2; i <= 2; i++) {
+      years.push(currentYear + i);
+    }
+    return years;
+  }
+
+  getScenarioKeys(): string[] {
+    return Object.keys(this.taxScenariosData);
+  }
+
+  getScenarioTotal(scenarioKey: string): number {
+    const data = this.taxScenariosData[scenarioKey];
+    return data ? data.reduce((sum, val) => sum + (val || 0), 0) : 0;
+  }
+
+  getScenarioMonthly(scenarioKey: string, monthIndex: number): number {
+    const data = this.taxScenariosData[scenarioKey];
+    return data ? (data[monthIndex] || 0) : 0;
+  }
+
+  getScenarioName(scenarioKey: string): string {
+    const names: {[key: string]: string} = {
+      // UoP scenarios
+      'BEZ_PPK': 'Bez PPK',
+      'PPK_2%': 'PPK 2%',
+      'PPK_4%': 'PPK 4%',
+      // B2B scenarios
+      'SKALA': 'Skala podatkowa',
+      'LINIOWY': 'Podatek liniowy 19%',
+      'RYCZALT': 'Ryczałt',
+      // Umowa zlecenie scenarios
+      'BEZ_ZUS': 'Bez ZUS',
+      'Z_ZUS': 'Z ZUS',
+      // Umowa o dzieło scenarios
+      'KOSZTY_20%': 'Koszty 20%',
+      'KOSZTY_50%': 'Koszty 50%',
+      // Current (default)
+      'CURRENT': 'Obecna konfiguracja'
+    };
+    return names[scenarioKey] || scenarioKey;
+  }
+
+  getIKZELimit(year: number): number {
+    // IKZE limit w 2026: 9388,20 PLN
+    const limits: {[key: number]: number} = {
+      2024: 9388.20,
+      2025: 9388.20,
+      2026: 9388.20
+    };
+    return limits[year] || 9388.20;
+  }
+
+  getIKELimit(year: number): number {
+    // IKE limit w 2026: 23 472 PLN
+    const limits: {[key: number]: number} = {
+      2024: 23472,
+      2025: 23472,
+      2026: 23472
+    };
+    return limits[year] || 23472;
+  }
+
+  getIKZETaxBenefit(): number {
+    // Oszczędność podatkowa przy IKZE (skala 12% lub 32%)
+    const yearlyTotal = this.getYearlyTotal();
+    // Załóżmy 12% dla uproszczenia, w rzeczywistości zależy od progu podatkowego
+    return this.getIKZELimit(this.simulationYear) * 0.12;
+  }
+
+  getTaxFormLabel(taxForm: string): string {
+    const found = this.taxForms.find(f => f.value === taxForm);
+    return found ? found.label : taxForm;
+  }
+
+  getZusTypeLabel(zusType: string): string {
+    const found = this.zusTypes.find(z => z.value === zusType);
+    return found ? found.label : zusType;
   }
 }

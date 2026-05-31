@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 018-add-vat-to-expenses
+      author: crm-finanse
+      changes:
+        - addColumn:
+            tableName: expenses
+            columns:
+              - column:
+                  name: vat_rate
+                  type: int
+                  remarks: "Stawka VAT w % (23, 8, 5, 0) lub null dla zwolnionych"
+              - column:
+                  name: vat_amount
+                  type: decimal(10,2)
+                  defaultValue: 0
+                  remarks: "Kwota VAT naliczonego"
+              - column:
+                  name: net_amount
+                  type: decimal(10,2)
+                  defaultValue: 0
+                  remarks: "Kwota netto bez VAT"
+        - sql:
+            sql: "ALTER TABLE expenses ADD CONSTRAINT chk_expense_vat_rate CHECK (vat_rate IN (0, 5, 8, 23) OR vat_rate IS NULL)"

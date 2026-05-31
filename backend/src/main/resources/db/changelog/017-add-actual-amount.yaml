@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 017-add-actual-amount
+      author: crm-finanse
+      changes:
+        - addColumn:
+            tableName: incomes
+            columns:
+              - column:
+                  name: actual_amount
+                  type: DECIMAL(10, 2)
+                  constraints:
+                    nullable: true

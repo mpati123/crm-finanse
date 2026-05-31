@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 019-add-default-vat-to-categories
+      author: crm-finanse
+      changes:
+        - addColumn:
+            tableName: categories
+            columns:
+              - column:
+                  name: default_vat_rate
+                  type: int
+                  remarks: "Domyślna stawka VAT dla kategorii"
+        - sql:
+            sql: "ALTER TABLE categories ADD CONSTRAINT chk_category_vat_rate CHECK (default_vat_rate IN (0, 5, 8, 23) OR default_vat_rate IS NULL)"

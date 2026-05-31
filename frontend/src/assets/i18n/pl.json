@@ -47,7 +47,9 @@
     "TOTAL": "Suma",
     "MONTHLY": "Miesięcznie",
     "YEARLY": "Rocznie",
-    "CURRENCY": "PLN"
+    "CURRENCY": "PLN",
+    "MONTH": "Miesiąc",
+    "YEAR": "Rok"
   },
   "INCOME_SOURCES": {
     "TITLE": "Źródła przychodów",
@@ -86,7 +88,11 @@
     "VAT": "VAT",
     "AUTHOR_COSTS": "Koszty autorskie",
     "IT_CONSULTING": "IT, doradztwo",
-    "NET_INVOICE": "Netto fakturowe"
+    "NET_INVOICE": "Netto fakturowe",
+    "YEARLY_PROJECTION": "Projekcja roczna",
+    "YEARLY_FORECAST": "Prognoza roczna",
+    "YEARLY_FORECAST_SHORT": "Prognoza",
+    "NET_INCOME": "Dochód netto (na rękę)"
   },
   "INCOME_TYPES": {
     "UOP": "Umowa o pracę",
@@ -151,8 +157,8 @@
   "ZUS_TYPES": {
     "PELNY": "Pełny ZUS",
     "MALY_ZUS": "Mały ZUS",
-    "MALY_ZUS_PLUS": "Mały ZUS Plus",
-    "PREFERENCYJNY": "ZUS preferencyjny",
+    "MALY_ZUS_PLUS": "Mały ZUS+",
+    "PREFERENCYJNY": "Preferencyjny",
     "ULGA_NA_START": "Ulga na start",
     "BEZ_ZUS": "Bez ZUS"
   },

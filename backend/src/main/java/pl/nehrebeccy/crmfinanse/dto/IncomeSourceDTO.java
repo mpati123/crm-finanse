@@ -50,6 +50,11 @@ public class IncomeSourceDTO {
 
     private B2BConfigDTO b2bConfig;
     private UoPConfigDTO uopConfig;
+    private UmowaZlecenieConfigDTO umowaZlecenieConfig;
+    private UmowaODzieloConfigDTO umowaODzieloConfig;
+
+    private Long taxPersonId;
+    private String taxPersonName;
 
     private String notes;
 

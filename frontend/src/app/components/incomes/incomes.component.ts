@@ -20,6 +20,9 @@ export class IncomesComponent implements OnInit {
   loading = false;
   showForm = false;
   editingIncome: Income | null = null;
+  yearToDateIncomes: Income[] = [];
+  incomeSources: any[] = [];
+  uniqueIncomeSources: Array<{id: number, name: string, total?: number, gross?: number, net?: number, personName?: string, isB2B?: boolean}> = [];
 
   newIncome: Income = {
     name: '',
@@ -59,6 +62,7 @@ export class IncomesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadIncomes();
+    this.loadIncomeSources();
     this.loadCategories();
   }
 
@@ -81,6 +85,7 @@ export class IncomesComponent implements OnInit {
       next: (data) => {
         this.incomes = data;
         this.loading = false;
+        this.loadYearToDateIncomes();
       },
       error: (err) => {
         console.error('Error loading incomes:', err);
@@ -98,7 +103,36 @@ export class IncomesComponent implements OnInit {
 
   onMonthChange(): void {
     this.loadIncomes();
+    this.loadYearToDateIncomes();
   }
+
+
+  loadIncomeSources(): void {
+    this.apiService.getActiveIncomeSources().subscribe({
+      next: (sources) => this.incomeSources = sources,
+      error: (err) => console.error('Error loading income sources:', err)
+    });
+  }
+
+  loadYearToDateIncomes(): void {
+    const startDate = `${this.selectedYear}-01-01`;
+    const endMonth = this.selectedMonth.toString().padStart(2, '0');
+    const lastDay = new Date(this.selectedYear, this.selectedMonth, 0).getDate();
+    const endDate = `${this.selectedYear}-${endMonth}-${lastDay}`;
+
+    this.apiService.getIncomes().subscribe({
+      next: (allIncomes) => {
+        this.yearToDateIncomes = allIncomes.filter(income => {
+          if (!income.date) return false;
+          const incomeDate = new Date(income.date);
+          return incomeDate >= new Date(startDate) && incomeDate <= new Date(endDate);
+        });
+        this.calculateUniqueIncomeSources();
+      },
+      error: (err) => console.error('Error loading year-to-date incomes:', err)
+    });
+  }
+
 
   openForm(income?: Income): void {
     if (income) {
@@ -167,4 +201,66 @@ export class IncomesComponent implements OnInit {
       currency: 'PLN'
     }).format(amount);
   }
+
+  getCumulativeBySource(sourceId: number | undefined): number {
+    if (!sourceId) return 0;
+    return this.yearToDateIncomes
+      .filter(i => i.incomeSourceId === sourceId)
+      .reduce((sum, i) => sum + (i.actualAmount || i.amount), 0);
+  }
+
+  getYearToDateTotal(): number {
+    return this.yearToDateIncomes.reduce((sum, i) => sum + (i.actualAmount || i.amount), 0);
+  }
+
+  calculateUniqueIncomeSources(): void {
+    const sourcesMap = new Map<string, {id: number, name: string, total?: number, gross?: number, net?: number, personName?: string, isB2B?: boolean}>();
+
+    this.yearToDateIncomes.forEach(income => {
+      if (income.incomeSourceId) {
+        const source = this.incomeSources.find(s => s.id === income.incomeSourceId);
+        const isB2B = source?.incomeType === 'B2B';
+        const personName = source?.personName;
+
+        // Dla B2B tworzymy osobny klucz per osoba
+        const key = isB2B && personName
+          ? `${income.incomeSourceId}-${personName}`
+          : `${income.incomeSourceId}`;
+
+        const existingSource = sourcesMap.get(key);
+
+        if (existingSource) {
+          if (isB2B) {
+            existingSource.gross = (existingSource.gross || 0) + income.amount;
+            existingSource.net = (existingSource.net || 0) + ((income as any).netAmount || 0);
+          } else {
+            existingSource.total = (existingSource.total || 0) + (income.actualAmount || income.amount);
+          }
+        } else {
+          const displayName = isB2B && personName
+            ? `${source?.name || income.name} (${personName})`
+            : source?.name || income.name;
+
+          const sourceData: any = {
+            id: income.incomeSourceId,
+            name: displayName,
+            personName,
+            isB2B
+          };
+
+          if (isB2B) {
+            sourceData.gross = income.amount;
+            sourceData.net = (income as any).netAmount || 0;
+          } else {
+            sourceData.total = income.actualAmount || income.amount;
+          }
+
+          sourcesMap.set(key, sourceData);
+        }
+      }
+    });
+
+    this.uniqueIncomeSources = Array.from(sourcesMap.values());
+  }
+
 }

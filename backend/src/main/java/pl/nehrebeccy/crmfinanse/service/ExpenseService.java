@@ -97,6 +97,7 @@ public class ExpenseService {
                 .status(expense.getStatus().name())
                 .notes(expense.getNotes())
                 .recurring(expense.isRecurring())
+                .expenseTemplateId(expense.getExpenseTemplateId())
                 .build();
     }
 
@@ -108,6 +109,7 @@ public class ExpenseService {
                 .status(Expense.PaymentStatus.valueOf(dto.getStatus().toUpperCase()))
                 .notes(dto.getNotes())
                 .recurring(dto.isRecurring())
+                .expenseTemplateId(dto.getExpenseTemplateId())
                 .build();
 
         if (dto.getCategoryId() != null) {

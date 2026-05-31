@@ -17,6 +17,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     List<Expense> findByCategoryId(Long categoryId);
 
+    boolean existsByExpenseTemplateIdAndDateBetween(Long expenseTemplateId, LocalDate startDate, LocalDate endDate);
+
     List<Expense> findByStatus(Expense.PaymentStatus status);
 
     @Query("SELECT SUM(e.amount) FROM Expense e WHERE e.date BETWEEN :startDate AND :endDate")

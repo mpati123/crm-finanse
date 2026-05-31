@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 012-add-expense-template-id
+      author: claude
+      changes:
+        - addColumn:
+            tableName: expenses
+            columns:
+              - column:
+                  name: expense_template_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: expenses
+            baseColumnNames: expense_template_id
+            constraintName: fk_expenses_template
+            referencedTableName: expense_templates
+            referencedColumnNames: id

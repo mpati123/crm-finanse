@@ -29,6 +29,9 @@ public class Category {
     @Column(nullable = false)
     private CategoryType type;
 
+    @Column(name = "default_vat_rate")
+    private Integer defaultVatRate;
+
     public enum CategoryType {
         EXPENSE,
         INCOME

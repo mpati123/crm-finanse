@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 020-migrate-existing-expenses-vat
+      author: crm-finanse
+      changes:
+        - sql:
+            sql: |
+              UPDATE expenses
+              SET net_amount = amount,
+                  vat_rate = NULL,
+                  vat_amount = 0
+              WHERE net_amount = 0;

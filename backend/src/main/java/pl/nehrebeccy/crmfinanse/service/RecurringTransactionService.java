@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.nehrebeccy.crmfinanse.dto.B2BConfigDTO;
 import pl.nehrebeccy.crmfinanse.dto.ExpenseDTO;
 import pl.nehrebeccy.crmfinanse.dto.IncomeDTO;
 import pl.nehrebeccy.crmfinanse.dto.IncomeSourceDTO;
@@ -13,6 +14,8 @@ import pl.nehrebeccy.crmfinanse.repository.ExpenseTemplateRepository;
 import pl.nehrebeccy.crmfinanse.repository.IncomeRepository;
 import pl.nehrebeccy.crmfinanse.repository.IncomeSourceRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,9 +62,31 @@ public class RecurringTransactionService {
             // Czy to przyszły przychód?
             boolean isFuture = paymentDate.isAfter(LocalDate.now());
 
-            // Oblicz netto
+            // Oblicz netto i brutto z kontekstem rocznym
             IncomeSourceDTO sourceDTO = toIncomeSourceDTO(source);
-            calculationService.calculateNetIncome(sourceDTO);
+
+            // Oblicz kontekst roczny - kumulowane wartosci z poprzednich miesiecy
+            BigDecimal cumulativeGross = BigDecimal.ZERO;
+            BigDecimal cumulativeIncome = BigDecimal.ZERO;
+            BigDecimal monthlyGross = sourceDTO.getAmount();
+
+            // Dla stawki godzinowej oblicz miesieczna kwote
+            if (sourceDTO.getRateType() == RateType.HOURLY &&
+                sourceDTO.getHourlyRate() != null &&
+                sourceDTO.getDefaultHoursPerMonth() != null) {
+                monthlyGross = sourceDTO.getHourlyRate()
+                    .multiply(BigDecimal.valueOf(sourceDTO.getDefaultHoursPerMonth()));
+            }
+
+            // Sumuj poprzednie miesiace (1 do month-1)
+            for (int m = 1; m < month; m++) {
+                cumulativeGross = cumulativeGross.add(monthlyGross);
+                cumulativeIncome = cumulativeIncome.add(monthlyGross);
+            }
+
+            IncomeCalculationService.YearlyContext yearlyContext =
+                new IncomeCalculationService.YearlyContext(month, cumulativeGross, cumulativeIncome);
+            calculationService.calculateNetIncome(sourceDTO, yearlyContext);
 
             // Ustaw actualHours na podstawie defaultHoursPerMonth dla stawki godzinowej
             Integer actualHours = null;
@@ -69,16 +94,50 @@ public class RecurringTransactionService {
                 actualHours = source.getDefaultHoursPerMonth();
             }
 
+            // Określ kwotę przychodu w zależności od typu:
+            // - UoP/Zlecenie/O dzieło: kwota netto (na rękę)
+            // - B2B: kwota brutto z VAT (wpływa na konto)
+            // - Świadczenie/Czynsz/Inne: kwota bez zmian
+            BigDecimal incomeAmount;
+            BigDecimal netAmount;
+
+            // Pobierz obliczone wartości (sprawdź czy nie są null)
+            BigDecimal calculatedNet = sourceDTO.getNetAmount() != null ? sourceDTO.getNetAmount() : source.getAmount();
+            BigDecimal calculatedGross = sourceDTO.getGrossAmount() != null ? sourceDTO.getGrossAmount() : source.getAmount();
+
+            switch (source.getIncomeType()) {
+                case UOP:
+                case UMOWA_ZLECENIE:
+                case UMOWA_O_DZIELO:
+                    // Dla umów o pracę - zapisz kwotę netto (na rękę)
+                    incomeAmount = calculatedNet;
+                    netAmount = calculatedNet;
+                    break;
+                case B2B:
+                    // Dla B2B - zapisz kwotę brutto z VAT (to wpływa na konto)
+                    incomeAmount = calculatedGross;
+                    netAmount = calculatedNet;
+                    break;
+                default:
+                    // Świadczenie, czynsz, inne - bez zmian
+                    incomeAmount = source.getAmount();
+                    netAmount = source.getAmount();
+                    break;
+            }
+
+            log.info("Źródło: {} typ: {}, brutto: {}, netto: {}, amount do zapisania: {}",
+                    source.getName(), source.getIncomeType(), calculatedGross, calculatedNet, incomeAmount);
+
             // Utwórz przychód
             IncomeDTO incomeDTO = IncomeDTO.builder()
                     .name(source.getName())
-                    .amount(source.getAmount())
+                    .amount(incomeAmount)
                     .categoryId(source.getCategory() != null ? source.getCategory().getId() : null)
                     .date(paymentDate)
                     .notes(buildIncomeNotes(source))
                     .recurring(true)
                     .estimated(isFuture)
-                    .netAmount(sourceDTO.getNetAmount())
+                    .netAmount(netAmount)
                     .actualHours(actualHours)
                     .overtimeHours100(0)
                     .overtimeHours150(0)
@@ -140,6 +199,7 @@ public class RecurringTransactionService {
                     .status(status)
                     .notes(template.getNotes())
                     .recurring(true)
+                    .expenseTemplateId(template.getId())
                     .build();
 
             ExpenseDTO created = expenseService.createExpense(expenseDTO);
@@ -147,13 +207,218 @@ public class RecurringTransactionService {
             log.info("Wygenerowano wydatek: {} na {} PLN", created.getName(), created.getAmount());
         }
 
+        // Generuj również wydatki B2B (ZUS, zdrowotna, podatek, VAT)
+        List<ExpenseDTO> b2bExpenses = generateB2BExpensesForMonth(year, month);
+        generatedExpenses.addAll(b2bExpenses);
+
         return generatedExpenses;
     }
 
     public GenerationResult generateAllForMonth(int year, int month) {
         List<IncomeDTO> incomes = generateIncomesForMonth(year, month);
         List<ExpenseDTO> expenses = generateExpensesForMonth(year, month);
+        // B2B expenses są już generowane wewnątrz generateExpensesForMonth()
         return new GenerationResult(incomes, expenses);
+    }
+
+    private List<ExpenseDTO> generateB2BExpensesForMonth(int year, int month) {
+        List<ExpenseDTO> generatedExpenses = new ArrayList<>();
+        LocalDate monthDate = LocalDate.of(year, month, 1);
+        LocalDate monthEnd = monthDate.plusMonths(1).minusDays(1);
+
+        List<IncomeSource> activeSources = incomeSourceRepository.findByActiveTrue();
+
+        for (IncomeSource source : activeSources) {
+            // Tylko źródła B2B
+            if (source.getIncomeType() != IncomeType.B2B) {
+                continue;
+            }
+
+            // Sprawdź czy źródło jest aktywne w tym miesiącu
+            if (!isSourceActiveInPeriod(source, monthDate, monthEnd)) {
+                continue;
+            }
+
+            // Sprawdź czy wydatki B2B już istnieją
+            String b2bExpensePrefix = "B2B - " + source.getName();
+            if (b2bExpensesExistForSourceInMonth(source.getId(), b2bExpensePrefix, year, month)) {
+                log.info("Wydatki B2B już istnieją dla źródła {} w {}/{}", source.getName(), year, month);
+                continue;
+            }
+
+            // Oblicz kwoty
+            IncomeSourceDTO sourceDTO = toIncomeSourceDTO(source);
+            calculationService.calculateNetIncome(sourceDTO);
+
+            B2BConfig b2bConfig = source.getB2bConfig();
+            if (b2bConfig == null) {
+                continue;
+            }
+
+            // Przychód netto fakturowy (bez VAT)
+            BigDecimal przychod = source.getAmount();
+            if (source.getRateType() == RateType.HOURLY && source.getHourlyRate() != null && source.getDefaultHoursPerMonth() != null) {
+                przychod = source.getHourlyRate().multiply(BigDecimal.valueOf(source.getDefaultHoursPerMonth()));
+            }
+
+            // 1. ZUS społeczny - płatny do 20-go następnego miesiąca
+            BigDecimal zusAmount = b2bConfig.getZusAmount();
+            if (zusAmount == null && b2bConfig.getZusType() != null) {
+                zusAmount = b2bConfig.getZusType().getDefaultAmount();
+            }
+            if (zusAmount != null && zusAmount.compareTo(BigDecimal.ZERO) > 0) {
+                LocalDate zusDate = LocalDate.of(year, month, 20);
+                ExpenseDTO zusExpense = ExpenseDTO.builder()
+                        .name("B2B - " + source.getName() + " - ZUS")
+                        .amount(zusAmount)
+                        .date(zusDate)
+                        .status(zusDate.isAfter(LocalDate.now()) ? "PENDING" : "PAID")
+                        .notes("ZUS społeczny - " + b2bConfig.getZusType().name() + " (auto-gen z " + source.getName() + ")")
+                        .recurring(true)
+                        .build();
+                ExpenseDTO created = expenseService.createExpense(zusExpense);
+                generatedExpenses.add(created);
+                log.info("Wygenerowano wydatek ZUS: {} PLN dla {}", zusAmount, source.getName());
+            }
+
+            // 2. Składka zdrowotna - płatna do 20-go następnego miesiąca
+            BigDecimal zdrowotna = calculateB2BHealthInsurance(b2bConfig, przychod, zusAmount);
+            if (zdrowotna != null && zdrowotna.compareTo(BigDecimal.ZERO) > 0) {
+                LocalDate zdrowotnaDate = LocalDate.of(year, month, 20);
+                ExpenseDTO zdrowotnaExpense = ExpenseDTO.builder()
+                        .name("B2B - " + source.getName() + " - Zdrowotna")
+                        .amount(zdrowotna)
+                        .date(zdrowotnaDate)
+                        .status(zdrowotnaDate.isAfter(LocalDate.now()) ? "PENDING" : "PAID")
+                        .notes("Składka zdrowotna (auto-gen z " + source.getName() + ")")
+                        .recurring(true)
+                        .build();
+                ExpenseDTO created = expenseService.createExpense(zdrowotnaExpense);
+                generatedExpenses.add(created);
+                log.info("Wygenerowano wydatek zdrowotna: {} PLN dla {}", zdrowotna, source.getName());
+            }
+
+            // 3. Zaliczka na podatek dochodowy - płatna do 20-go następnego miesiąca
+            BigDecimal podatek = calculateB2BIncomeTax(b2bConfig, przychod, zusAmount);
+            if (podatek != null && podatek.compareTo(BigDecimal.ZERO) > 0) {
+                LocalDate podatekDate = LocalDate.of(year, month, 20);
+                ExpenseDTO podatekExpense = ExpenseDTO.builder()
+                        .name("B2B - " + source.getName() + " - Podatek")
+                        .amount(podatek)
+                        .date(podatekDate)
+                        .status(podatekDate.isAfter(LocalDate.now()) ? "PENDING" : "PAID")
+                        .notes("Zaliczka PIT - " + b2bConfig.getTaxForm().name() + " (auto-gen z " + source.getName() + ")")
+                        .recurring(true)
+                        .build();
+                ExpenseDTO created = expenseService.createExpense(podatekExpense);
+                generatedExpenses.add(created);
+                log.info("Wygenerowano wydatek podatek: {} PLN dla {}", podatek, source.getName());
+            }
+
+            // 4. VAT należny - płatny do 25-go następnego miesiąca (jeśli VAT-owiec)
+            if (b2bConfig.isVatPayer()) {
+                Integer vatRate = b2bConfig.getVatRate() != null ? b2bConfig.getVatRate() : 23;
+                BigDecimal vatAmount = przychod.multiply(BigDecimal.valueOf(vatRate))
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+                LocalDate vatDate = LocalDate.of(year, month, 25);
+                ExpenseDTO vatExpense = ExpenseDTO.builder()
+                        .name("B2B - " + source.getName() + " - VAT")
+                        .amount(vatAmount)
+                        .date(vatDate)
+                        .status(vatDate.isAfter(LocalDate.now()) ? "PENDING" : "PAID")
+                        .notes("VAT należny " + vatRate + "% (auto-gen z " + source.getName() + ")")
+                        .recurring(true)
+                        .build();
+                ExpenseDTO created = expenseService.createExpense(vatExpense);
+                generatedExpenses.add(created);
+                log.info("Wygenerowano wydatek VAT: {} PLN dla {}", vatAmount, source.getName());
+            }
+        }
+
+        return generatedExpenses;
+    }
+
+    private boolean b2bExpensesExistForSourceInMonth(Long sourceId, String expensePrefix, int year, int month) {
+        LocalDate startDate = LocalDate.of(year, month, 1);
+        LocalDate endDate = startDate.plusMonths(1).minusDays(1);
+
+        // Sprawdź czy istnieje choćby jeden wydatek B2B dla tego źródła
+        // Używamy notes do identyfikacji (zawiera "auto-gen z {sourceName}")
+        List<Expense> expenses = expenseRepository.findByDateBetween(startDate, endDate);
+        return expenses.stream()
+                .anyMatch(e -> e.getName() != null && e.getName().startsWith(expensePrefix));
+    }
+
+    private BigDecimal calculateB2BHealthInsurance(B2BConfig b2bConfig, BigDecimal przychod, BigDecimal zus) {
+        if (b2bConfig.getHealthInsurance() != null) {
+            return b2bConfig.getHealthInsurance();
+        }
+
+        BigDecimal dochod = przychod.subtract(zus != null ? zus : BigDecimal.ZERO);
+        if (dochod.compareTo(BigDecimal.ZERO) < 0) {
+            dochod = BigDecimal.ZERO;
+        }
+
+        BigDecimal zdrowotna;
+        TaxForm taxForm = b2bConfig.getTaxForm();
+
+        if (taxForm == TaxForm.LINIOWY) {
+            // 4.9% od dochodu, min 314.10 zł
+            zdrowotna = dochod.multiply(new BigDecimal("0.049"));
+            BigDecimal minZdrowotna = new BigDecimal("314.10");
+            if (zdrowotna.compareTo(minZdrowotna) < 0) {
+                zdrowotna = minZdrowotna;
+            }
+        } else if (taxForm == TaxForm.RYCZALT) {
+            // Zryczałtowana - ok. 420 zł dla średnich przychodów
+            zdrowotna = new BigDecimal("420");
+        } else {
+            // Skala - 9% od dochodu, min 314.10 zł
+            zdrowotna = dochod.multiply(new BigDecimal("0.09"));
+            BigDecimal minZdrowotna = new BigDecimal("314.10");
+            if (zdrowotna.compareTo(minZdrowotna) < 0) {
+                zdrowotna = minZdrowotna;
+            }
+        }
+
+        return zdrowotna.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calculateB2BIncomeTax(B2BConfig b2bConfig, BigDecimal przychod, BigDecimal zus) {
+        if (b2bConfig.getIncomeTaxAdvance() != null) {
+            return b2bConfig.getIncomeTaxAdvance();
+        }
+
+        BigDecimal dochod = przychod.subtract(zus != null ? zus : BigDecimal.ZERO);
+        if (dochod.compareTo(BigDecimal.ZERO) < 0) {
+            dochod = BigDecimal.ZERO;
+        }
+
+        BigDecimal podatek;
+        TaxForm taxForm = b2bConfig.getTaxForm();
+
+        if (taxForm == TaxForm.LINIOWY) {
+            // 19% od dochodu
+            podatek = dochod.multiply(new BigDecimal("0.19"));
+        } else if (taxForm == TaxForm.RYCZALT) {
+            // Ryczałt - procent od przychodu
+            BigDecimal ryczaltRate = b2bConfig.getRyczaltRate();
+            if (ryczaltRate == null) {
+                ryczaltRate = new BigDecimal("12"); // domyślnie 12% dla IT
+            }
+            podatek = przychod.multiply(ryczaltRate.divide(BigDecimal.valueOf(100)));
+        } else {
+            // Skala - 12% od dochodu minus kwota wolna
+            BigDecimal kwotaWolnaMiesieczna = new BigDecimal("30000").divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP);
+            podatek = dochod.multiply(new BigDecimal("0.12")).subtract(kwotaWolnaMiesieczna);
+        }
+
+        if (podatek.compareTo(BigDecimal.ZERO) < 0) {
+            podatek = BigDecimal.ZERO;
+        }
+
+        return podatek.setScale(2, RoundingMode.HALF_UP);
     }
 
     private boolean isSourceActiveInPeriod(IncomeSource source, LocalDate start, LocalDate end) {
@@ -170,18 +435,14 @@ public class RecurringTransactionService {
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.plusMonths(1).minusDays(1);
 
-        List<Income> existingIncomes = incomeRepository.findByDateBetween(startDate, endDate);
-        return existingIncomes.stream()
-                .anyMatch(income -> income.getName().contains(source.getName()) && income.isRecurring());
+        return incomeRepository.existsByIncomeSourceIdAndDateBetween(source.getId(), startDate, endDate);
     }
 
     private boolean expenseExistsForTemplateInMonth(ExpenseTemplate template, int year, int month) {
         LocalDate startDate = LocalDate.of(year, month, 1);
         LocalDate endDate = startDate.plusMonths(1).minusDays(1);
 
-        List<Expense> existingExpenses = expenseRepository.findByDateBetween(startDate, endDate);
-        return existingExpenses.stream()
-                .anyMatch(expense -> expense.getName().equals(template.getName()) && expense.isRecurring());
+        return expenseRepository.existsByExpenseTemplateIdAndDateBetween(template.getId(), startDate, endDate);
     }
 
     private boolean shouldGenerateExpense(ExpenseTemplate template, int year, int month) {
@@ -233,7 +494,21 @@ public class RecurringTransactionService {
                    .categoryName(entity.getCategory().getName());
         }
 
-        // TODO: dodać mapowanie B2B i UoP config
+        // Mapowanie B2B config
+        if (entity.getB2bConfig() != null) {
+            B2BConfig b2b = entity.getB2bConfig();
+            builder.b2bConfig(B2BConfigDTO.builder()
+                    .id(b2b.getId())
+                    .taxForm(b2b.getTaxForm())
+                    .zusType(b2b.getZusType())
+                    .vatPayer(b2b.isVatPayer())
+                    .vatRate(b2b.getVatRate())
+                    .zusAmount(b2b.getZusAmount())
+                    .healthInsurance(b2b.getHealthInsurance())
+                    .incomeTaxAdvance(b2b.getIncomeTaxAdvance())
+                    .ryczaltRate(b2b.getRyczaltRate())
+                    .build());
+        }
 
         return builder.build();
     }

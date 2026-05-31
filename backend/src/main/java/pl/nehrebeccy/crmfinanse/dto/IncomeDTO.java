@@ -36,6 +36,7 @@ public class IncomeDTO {
     private boolean recurring;
     private Boolean estimated;
     private BigDecimal netAmount;
+    private BigDecimal actualAmount;
     private Integer actualHours;
     private Integer overtimeHours100;
     private Integer overtimeHours150;

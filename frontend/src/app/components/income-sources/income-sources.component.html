@@ -93,11 +93,11 @@
           </div>
           <div class="config-row">
             <span class="label">{{ 'INCOME_SOURCES.TAX_FORM' | translate }}:</span>
-            <span class="value">{{ source.b2bConfig.taxForm }}</span>
+            <span class="value">{{ getTaxFormLabel(source.b2bConfig.taxForm) }}</span>
           </div>
           <div class="config-row">
             <span class="label">{{ 'INCOME_SOURCES.ZUS' | translate }}:</span>
-            <span class="value">{{ source.b2bConfig.zusType }} ({{ formatCurrency(source.b2bConfig.zusAmount || 0) }})</span>
+            <span class="value">{{ getZusTypeLabel(source.b2bConfig.zusType) }} ({{ formatCurrency(source.b2bConfig.zusAmount || 0) }})</span>
           </div>
           <div *ngIf="source.b2bConfig.vatPayer" class="config-row">
             <span class="label">{{ 'INCOME_SOURCES.VAT' | translate }}:</span>
@@ -124,6 +124,9 @@
       </div>
 
       <div class="card-actions">
+        <button class="btn-icon forecast" (click)="openYearlySimulation(source)" [title]="'INCOME_SOURCES.YEARLY_FORECAST' | translate">
+          {{ 'INCOME_SOURCES.YEARLY_FORECAST_SHORT' | translate }}
+        </button>
         <button class="btn-icon edit" (click)="openForm(source)" [title]="'COMMON.EDIT' | translate">{{ 'COMMON.EDIT' | translate }}</button>
         <button class="btn-icon delete" (click)="deleteSource(source.id!)" [title]="'COMMON.DELETE' | translate">{{ 'COMMON.DELETE' | translate }}</button>
       </div>
@@ -403,6 +406,159 @@
           <button type="submit" class="btn-primary">{{ editingSource ? ('COMMON.SAVE' | translate) : ('COMMON.ADD' | translate) }}</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Yearly Simulation Modal -->
+  <div *ngIf="showYearlySimulation" class="modal-overlay" (click)="closeYearlySimulation()">
+    <div class="modal modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ 'INCOME_SOURCES.YEARLY_FORECAST' | translate }} - {{ selectedSourceForSimulation?.name }}</h2>
+        <button class="btn-close" (click)="closeYearlySimulation()">&times;</button>
+      </div>
+      <div class="simulation-content">
+        <div class="simulation-controls">
+          <button class="btn-secondary" (click)="toggleComparisonView()">
+            {{ showComparisonView ? 'Ukryj porównanie wariantów' : 'Porównaj warianty' }}
+          </button>
+          <div class="year-selector">
+            <label for="simYear">{{ 'COMMON.YEAR' | translate }}:</label>
+            <select id="simYear" [(ngModel)]="simulationYear" (ngModelChange)="onSimulationYearChange()">
+              <option *ngFor="let year of years" [ngValue]="year">{{ year }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Main forecast table -->
+        <div class="simulation-table">
+          <h3>Prognoza roczna</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'COMMON.MONTH' | translate }}</th>
+                <th>Kwota netto</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let month of [0,1,2,3,4,5,6,7,8,9,10,11]">
+                <td>{{ getMonthName(month) }}</td>
+                <td class="amount-cell">{{ formatCurrency(getMonthlyTotal(month)) }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td><strong>{{ 'COMMON.TOTAL' | translate }}</strong></td>
+                <td class="amount-cell"><strong>{{ formatCurrency(getYearlyTotal()) }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Comparison section (shown only when button is clicked) -->
+        <div *ngIf="showComparisonView && getScenarioKeys().length > 0" class="comparison-section">
+          <h3>Porównanie wariantów</h3>
+          <div class="simulation-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ 'COMMON.MONTH' | translate }}</th>
+                  <th *ngFor="let scenario of getScenarioKeys()">{{ getScenarioName(scenario) }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let month of [0,1,2,3,4,5,6,7,8,9,10,11]">
+                  <td>{{ getMonthName(month) }}</td>
+                  <td class="amount-cell" *ngFor="let scenario of getScenarioKeys()">
+                    {{ formatCurrency(getScenarioMonthly(scenario, month)) }}
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td><strong>{{ 'COMMON.TOTAL' | translate }}</strong></td>
+                  <td class="amount-cell" *ngFor="let scenario of getScenarioKeys()">
+                    <strong>{{ formatCurrency(getScenarioTotal(scenario)) }}</strong>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- IKE/IKZE Info Section -->
+        <div class="ike-ikze-section">
+          <h3>Długoterminowe oszczędzanie - IKE i IKZE</h3>
+          <div class="savings-cards">
+            <div class="savings-card ikze-card">
+              <div class="card-icon">💰</div>
+              <h4>IKZE - Indywidualne Konto Zabezpieczenia Emerytalnego</h4>
+              <div class="savings-info">
+                <div class="info-item">
+                  <span class="label">Roczny limit wpłat ({{ simulationYear }}):</span>
+                  <span class="value">{{ formatCurrency(getIKZELimit(simulationYear)) }}</span>
+                </div>
+                <div class="info-item highlight">
+                  <span class="label">Oszczędność podatkowa:</span>
+                  <span class="value">{{ formatCurrency(getIKZETaxBenefit()) }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Miesięczna wpłata:</span>
+                  <span class="value">{{ formatCurrency(getIKZELimit(simulationYear) / 12) }}</span>
+                </div>
+              </div>
+              <p class="description">
+                Wpłaty do IKZE możesz odliczyć od dochodu w zeznaniu podatkowym (PIT-37, PIT-36).
+                Przy stawce 12% oszczędzasz {{ formatCurrency(getIKZETaxBenefit()) }},
+                przy stawce 32% nawet {{ formatCurrency(getIKZELimit(simulationYear) * 0.32) }}.
+              </p>
+            </div>
+
+            <div class="savings-card ike-card">
+              <div class="card-icon">🏦</div>
+              <h4>IKE - Indywidualne Konto Emerytalne</h4>
+              <div class="savings-info">
+                <div class="info-item">
+                  <span class="label">Roczny limit wpłat ({{ simulationYear }}):</span>
+                  <span class="value">{{ formatCurrency(getIKELimit(simulationYear)) }}</span>
+                </div>
+                <div class="info-item highlight">
+                  <span class="label">Zwolnienie z podatku:</span>
+                  <span class="value">Zyski z inwestycji</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Miesięczna wpłata:</span>
+                  <span class="value">{{ formatCurrency(getIKELimit(simulationYear) / 12) }}</span>
+                </div>
+              </div>
+              <p class="description">
+                IKE nie daje ulgi podatkowej przy wpłacie, ale zyski z inwestycji są całkowicie zwolnione z podatku.
+                Po 60. roku życia możesz wypłacić środki bez podatku Belki (19%).
+              </p>
+            </div>
+          </div>
+
+          <div class="combined-info">
+            <div class="combined-header">
+              <span class="icon">📊</span>
+              <h4>Łączne oszczędności roczne</h4>
+            </div>
+            <div class="combined-details">
+              <div class="detail-row">
+                <span>IKE + IKZE razem:</span>
+                <strong>{{ formatCurrency(getIKELimit(simulationYear) + getIKZELimit(simulationYear)) }}</strong>
+              </div>
+              <div class="detail-row">
+                <span>Miesięcznie (IKE + IKZE):</span>
+                <strong>{{ formatCurrency((getIKELimit(simulationYear) + getIKZELimit(simulationYear)) / 12) }}</strong>
+              </div>
+              <div class="detail-row highlight">
+                <span>% rocznego dochodu netto:</span>
+                <strong>{{ ((getIKELimit(simulationYear) + getIKZELimit(simulationYear)) / getYearlyTotal() * 100).toFixed(1) }}%</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

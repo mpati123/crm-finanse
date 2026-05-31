@@ -75,6 +75,18 @@ public class IncomeSource {
     @JoinColumn(name = "uop_config_id")
     private UoPConfig uopConfig;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tax_person_id")
+    private TaxPerson taxPerson;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "umowa_zlecenie_config_id")
+    private UmowaZlecenieConfig umowaZlecenieConfig;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "umowa_o_dzielo_config_id")
+    private UmowaODzieloConfig umowaODzieloConfig;
+
     @Column(name = "notes")
     private String notes;
 }

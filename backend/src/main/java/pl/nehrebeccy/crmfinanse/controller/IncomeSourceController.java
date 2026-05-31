@@ -5,11 +5,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.nehrebeccy.crmfinanse.dto.IncomeSourceDTO;
+import pl.nehrebeccy.crmfinanse.model.AmountType;
 import pl.nehrebeccy.crmfinanse.model.IncomeType;
 import pl.nehrebeccy.crmfinanse.model.TaxForm;
 import pl.nehrebeccy.crmfinanse.model.ZUSType;
 import pl.nehrebeccy.crmfinanse.service.IncomeSourceService;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +69,17 @@ public class IncomeSourceController {
         return ResponseEntity.ok(types);
     }
 
+    @GetMapping("/amount-types")
+    public ResponseEntity<List<Map<String, String>>> getAmountTypes() {
+        List<Map<String, String>> types = Arrays.stream(AmountType.values())
+                .map(type -> Map.of(
+                        "value", type.name(),
+                        "label", type.getDisplayName()
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(types);
+    }
+
     @GetMapping("/tax-forms")
     public ResponseEntity<List<Map<String, String>>> getTaxForms() {
         List<Map<String, String>> forms = Arrays.stream(TaxForm.values())
@@ -88,5 +101,41 @@ public class IncomeSourceController {
                 ))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(types);
+    }
+
+    /**
+     * Symuluje obliczenia netto dla calego roku.
+     * Pokazuje jak zmienia sie kwota netto w kazdym miesiacu z uwzglednieniem:
+     * - Limitu 30-krotnosci ZUS (po przekroczeniu skladki emerytalne i rentowe przestaja byc pobierane)
+     * - Progresywnej skali podatkowej (12% do 120k, 32% powyzej)
+     */
+    @GetMapping("/{id}/yearly-simulation")
+    public ResponseEntity<BigDecimal[]> simulateYearlyNetIncome(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(incomeSourceService.simulateYearlyNetIncome(id, year));
+    }
+
+    /**
+     * Porównuje różne scenariusze opodatkowania dla B2B.
+     */
+    @GetMapping("/{id}/tax-scenarios")
+    public ResponseEntity<Map<String, BigDecimal[]>> compareTaxScenarios(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(incomeSourceService.compareTaxScenarios(id, year));
+    }
+
+    /**
+     * Oblicza netto dla konkretnego miesiaca z uwzglednieniem kontekstu rocznego.
+     */
+    @GetMapping("/{id}/month/{month}")
+    public ResponseEntity<IncomeSourceDTO> calculateNetIncomeForMonth(
+            @PathVariable Long id,
+            @PathVariable int month) {
+        if (month < 1 || month > 12) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(incomeSourceService.calculateNetIncomeForMonth(id, month));
     }
 }

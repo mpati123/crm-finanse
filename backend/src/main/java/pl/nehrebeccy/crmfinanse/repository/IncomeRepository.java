@@ -17,6 +17,9 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     List<Income> findByCategoryId(Long categoryId);
 
+    boolean existsByIncomeSourceIdAndDateBetween(Long incomeSourceId, LocalDate startDate, LocalDate endDate);
+List<Income> findByIncomeSourceIdAndDateBetween(Long incomeSourceId, LocalDate startDate, LocalDate endDate);
+
     @Query("SELECT SUM(i.amount) FROM Income i WHERE i.date BETWEEN :startDate AND :endDate")
     BigDecimal sumAmountByDateBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 

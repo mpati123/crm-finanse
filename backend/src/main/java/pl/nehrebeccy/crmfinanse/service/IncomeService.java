@@ -59,6 +59,7 @@ public class IncomeService {
         income.setRecurring(dto.isRecurring());
         income.setEstimated(dto.getEstimated());
         income.setNetAmount(dto.getNetAmount());
+        income.setActualAmount(dto.getActualAmount());
         income.setActualHours(dto.getActualHours());
         income.setOvertimeHours100(dto.getOvertimeHours100());
         income.setOvertimeHours150(dto.getOvertimeHours150());
@@ -97,6 +98,7 @@ public class IncomeService {
                 .recurring(income.isRecurring())
                 .estimated(income.getEstimated())
                 .netAmount(income.getNetAmount())
+                .actualAmount(income.getActualAmount())
                 .actualHours(income.getActualHours())
                 .overtimeHours100(income.getOvertimeHours100())
                 .overtimeHours150(income.getOvertimeHours150())
@@ -114,6 +116,7 @@ public class IncomeService {
                 .recurring(dto.isRecurring())
                 .estimated(dto.getEstimated())
                 .netAmount(dto.getNetAmount())
+                .actualAmount(dto.getActualAmount())
                 .actualHours(dto.getActualHours())
                 .overtimeHours100(dto.getOvertimeHours100())
                 .overtimeHours150(dto.getOvertimeHours150())
@@ -129,4 +132,13 @@ public class IncomeService {
 
         return income;
     }
+
+    public List<IncomeDTO> getIncomesBySourceAndYear(Long incomeSourceId, int year) {
+        LocalDate startDate = LocalDate.of(year, 1, 1);
+        LocalDate endDate = LocalDate.of(year, 12, 31);
+        return incomeRepository.findByIncomeSourceIdAndDateBetween(incomeSourceId, startDate, endDate).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 }
+

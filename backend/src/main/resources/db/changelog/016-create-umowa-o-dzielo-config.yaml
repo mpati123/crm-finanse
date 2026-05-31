@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 016-create-umowa-o-dzielo-configs
+      author: system
+      changes:
+        - createTable:
+            tableName: umowa_o_dzielo_configs
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: cost_rate_type
+                  type: VARCHAR(20)
+                  defaultValue: 'STANDARD_20'
+              - column:
+                  name: custom_cost_rate
+                  type: DECIMAL(5, 4)
+              - column:
+                  name: income_tax
+                  type: DECIMAL(10, 2)
+
+  - changeSet:
+      id: 016-add-umowa-o-dzielo-config-to-income-sources
+      author: system
+      changes:
+        - addColumn:
+            tableName: income_sources
+            columns:
+              - column:
+                  name: umowa_o_dzielo_config_id
+                  type: BIGINT
+        - addForeignKeyConstraint:
+            baseTableName: income_sources
+            baseColumnNames: umowa_o_dzielo_config_id
+            referencedTableName: umowa_o_dzielo_configs
+            referencedColumnNames: id
+            constraintName: fk_income_source_umowa_o_dzielo_config

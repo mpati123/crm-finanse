@@ -44,7 +44,11 @@ export class ApiService {
     return this.http.get<Income[]>(`${this.baseUrl}/incomes`);
   }
 
-  getIncomesByMonth(year: number, month: number): Observable<Income[]> {
+  getIncomes(): Observable<Income[]> {
+    return this.http.get<Income[]>(`${this.baseUrl}/incomes`);
+  }
+
+    getIncomesByMonth(year: number, month: number): Observable<Income[]> {
     return this.http.get<Income[]>(`${this.baseUrl}/incomes/month/${year}/${month}`);
   }
 
@@ -147,6 +151,10 @@ export class ApiService {
     return this.http.get<ZUSTypeOption[]>(`${this.baseUrl}/income-sources/zus-types`);
   }
 
+  getAmountTypes(): Observable<EnumOption[]> {
+    return this.http.get<EnumOption[]>(`${this.baseUrl}/income-sources/amount-types`);
+  }
+
   // Expense Templates
   getAllExpenseTemplates(): Observable<ExpenseTemplate[]> {
     return this.http.get<ExpenseTemplate[]>(`${this.baseUrl}/expense-templates`);
@@ -188,4 +196,19 @@ export class ApiService {
   generateExpensesForMonth(year: number, month: number): Observable<Expense[]> {
     return this.http.post<Expense[]>(`${this.baseUrl}/recurring/generate/expenses/${year}/${month}`, {});
   }
-}
+
+  // Yearly income simulation
+  getYearlySimulation(sourceId: number, year?: number): Observable<number[]> {
+    const params = year ? `?year=${year}` : '';
+    return this.http.get<number[]>(`${this.baseUrl}/income-sources/${sourceId}/yearly-simulation${params}`);
+  }
+
+  getTaxScenarios(sourceId: number, year?: number): Observable<{[key: string]: number[]}> {
+    const params = year ? `?year=${year}` : '';
+    return this.http.get<{[key: string]: number[]}>(`${this.baseUrl}/income-sources/${sourceId}/tax-scenarios${params}`);
+  }
+
+  getIncomesBySourceAndYear(sourceId: number, year: number): Observable<Income[]> {
+    return this.http.get<Income[]>(`${this.baseUrl}/incomes/source/${sourceId}/year/${year}`);
+  }
+  }

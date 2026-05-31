@@ -1,0 +1,170 @@
+databaseChangeLog:
+  - changeSet:
+      id: 014-create-tax-persons
+      author: system
+      changes:
+        - createTable:
+            tableName: tax_persons
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: pit2_filed
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: cost_type
+                  type: varchar(50)
+                  defaultValue: 'STANDARD_250'
+              - column:
+                  name: joint_tax_return
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: spouse_id
+                  type: bigint
+              - column:
+                  name: tax_year
+                  type: int
+              - column:
+                  name: cumulative_gross_income
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: cumulative_taxable_income
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: cumulative_zus_paid
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: zus_limit_reached
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: second_tax_bracket
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: default_tax_form
+                  type: varchar(50)
+              - column:
+                  name: default_zus_type
+                  type: varchar(50)
+              - column:
+                  name: default_vat_payer
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: active
+                  type: boolean
+                  defaultValueBoolean: true
+
+        - addForeignKeyConstraint:
+            baseTableName: tax_persons
+            baseColumnNames: spouse_id
+            referencedTableName: tax_persons
+            referencedColumnNames: id
+            constraintName: fk_tax_person_spouse
+            onDelete: SET NULL
+
+  - changeSet:
+      id: 014-create-yearly-tax-summaries
+      author: system
+      changes:
+        - createTable:
+            tableName: yearly_tax_summaries
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: tax_person_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: year
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: month
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: gross_income_ytd
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: taxable_income_ytd
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: zus_em_rent_paid_ytd
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: zus_health_paid_ytd
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: income_tax_paid_ytd
+                  type: decimal(15, 2)
+                  defaultValueNumeric: 0
+              - column:
+                  name: zus_limit_reached_this_month
+                  type: boolean
+                  defaultValueBoolean: false
+              - column:
+                  name: tax_bracket_changed_this_month
+                  type: boolean
+                  defaultValueBoolean: false
+
+        - addForeignKeyConstraint:
+            baseTableName: yearly_tax_summaries
+            baseColumnNames: tax_person_id
+            referencedTableName: tax_persons
+            referencedColumnNames: id
+            constraintName: fk_yearly_tax_summary_person
+            onDelete: CASCADE
+
+        - addUniqueConstraint:
+            tableName: yearly_tax_summaries
+            columnNames: tax_person_id, year, month
+            constraintName: uk_yearly_tax_summary_person_year_month
+
+  - changeSet:
+      id: 014-add-tax-person-to-income-sources
+      author: system
+      changes:
+        - addColumn:
+            tableName: income_sources
+            columns:
+              - column:
+                  name: tax_person_id
+                  type: bigint
+
+        - addForeignKeyConstraint:
+            baseTableName: income_sources
+            baseColumnNames: tax_person_id
+            referencedTableName: tax_persons
+            referencedColumnNames: id
+            constraintName: fk_income_source_tax_person
+            onDelete: SET NULL

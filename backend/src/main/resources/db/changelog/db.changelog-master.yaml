@@ -21,3 +21,21 @@ databaseChangeLog:
       file: db/changelog/010-add-hourly-rate.yaml
   - include:
       file: db/changelog/011-add-actual-hours.yaml
+  - include:
+      file: db/changelog/012-add-expense-template-id.yaml
+  - include:
+      file: db/changelog/013-clear-transactions-data.yaml
+  - include:
+      file: db/changelog/014-create-tax-persons.yaml
+  - include:
+      file: db/changelog/015-create-umowa-zlecenie-config.yaml
+  - include:
+      file: db/changelog/016-create-umowa-o-dzielo-config.yaml
+  - include:
+      file: db/changelog/017-add-actual-amount.yaml
+  - include:
+      file: db/changelog/018-add-vat-to-expenses.yaml
+  - include:
+      file: db/changelog/019-add-default-vat-to-categories.yaml
+  - include:
+      file: db/changelog/020-migrate-existing-expenses-vat.yaml
