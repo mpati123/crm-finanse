@@ -332,5 +332,18 @@
     "FRIDAY": "Fredag",
     "SATURDAY": "Lördag",
     "SUNDAY": "Söndag"
+  },
+  "TAX_SCENARIOS": {
+    "BEZ_PPK": "Utan PPK",
+    "PPK_2%": "PPK 2%",
+    "PPK_4%": "PPK 4%",
+    "SKALA": "Progressiv skala",
+    "LINIOWY": "Fast skatt 19%",
+    "RYCZALT": "Schablonbeskattning",
+    "BEZ_ZUS": "Utan ZUS",
+    "Z_ZUS": "Med ZUS",
+    "KOSZTY_20%": "Kostnader 20%",
+    "KOSZTY_50%": "Kostnader 50%",
+    "CURRENT": "Nuvarande konfiguration"
   }
 }

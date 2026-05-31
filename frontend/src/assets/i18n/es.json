@@ -332,5 +332,18 @@
     "FRIDAY": "Viernes",
     "SATURDAY": "Sábado",
     "SUNDAY": "Domingo"
+  },
+  "TAX_SCENARIOS": {
+    "BEZ_PPK": "Sin PPK",
+    "PPK_2%": "PPK 2%",
+    "PPK_4%": "PPK 4%",
+    "SKALA": "Escala progresiva",
+    "LINIOWY": "Impuesto fijo 19%",
+    "RYCZALT": "Impuesto global",
+    "BEZ_ZUS": "Sin ZUS",
+    "Z_ZUS": "Con ZUS",
+    "KOSZTY_20%": "Costos 20%",
+    "KOSZTY_50%": "Costos 50%",
+    "CURRENT": "Configuración actual"
   }
 }

@@ -332,5 +332,18 @@
     "FRIDAY": "Freitag",
     "SATURDAY": "Samstag",
     "SUNDAY": "Sonntag"
+  },
+  "TAX_SCENARIOS": {
+    "BEZ_PPK": "Ohne PPK",
+    "PPK_2%": "PPK 2%",
+    "PPK_4%": "PPK 4%",
+    "SKALA": "Progressive Steuerskala",
+    "LINIOWY": "Pauschalsteuer 19%",
+    "RYCZALT": "Pauschalsteuer",
+    "BEZ_ZUS": "Ohne ZUS",
+    "Z_ZUS": "Mit ZUS",
+    "KOSZTY_20%": "Kosten 20%",
+    "KOSZTY_50%": "Kosten 50%",
+    "CURRENT": "Aktuelle Konfiguration"
   }
 }

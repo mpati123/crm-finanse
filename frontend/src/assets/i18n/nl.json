@@ -332,5 +332,18 @@
     "FRIDAY": "Vrijdag",
     "SATURDAY": "Zaterdag",
     "SUNDAY": "Zondag"
+  },
+  "TAX_SCENARIOS": {
+    "BEZ_PPK": "Zonder PPK",
+    "PPK_2%": "PPK 2%",
+    "PPK_4%": "PPK 4%",
+    "SKALA": "Progressieve schaal",
+    "LINIOWY": "Vlakke belasting 19%",
+    "RYCZALT": "Forfaitaire belasting",
+    "BEZ_ZUS": "Zonder ZUS",
+    "Z_ZUS": "Met ZUS",
+    "KOSZTY_20%": "Kosten 20%",
+    "KOSZTY_50%": "Kosten 50%",
+    "CURRENT": "Huidige configuratie"
   }
 }

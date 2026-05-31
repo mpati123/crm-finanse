@@ -332,5 +332,18 @@
     "FRIDAY": "Pátek",
     "SATURDAY": "Sobota",
     "SUNDAY": "Neděle"
+  },
+  "TAX_SCENARIOS": {
+    "BEZ_PPK": "Bez PPK",
+    "PPK_2%": "PPK 2%",
+    "PPK_4%": "PPK 4%",
+    "SKALA": "Progresivní stupnice",
+    "LINIOWY": "Rovná daň 19%",
+    "RYCZALT": "Paušální daň",
+    "BEZ_ZUS": "Bez ZUS",
+    "Z_ZUS": "S ZUS",
+    "KOSZTY_20%": "Náklady 20%",
+    "KOSZTY_50%": "Náklady 50%",
+    "CURRENT": "Aktuální konfigurace"
   }
 }
