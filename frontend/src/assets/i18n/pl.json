@@ -362,5 +362,18 @@
     "FRIDAY": "Piątek",
     "SATURDAY": "Sobota",
     "SUNDAY": "Niedziela"
+  },
+  "TAX_SCENARIOS": {
+    "BEZ_PPK": "Bez PPK",
+    "PPK_2%": "PPK 2%",
+    "PPK_4%": "PPK 4%",
+    "SKALA": "Skala podatkowa",
+    "LINIOWY": "Podatek liniowy 19%",
+    "RYCZALT": "Ryczałt",
+    "BEZ_ZUS": "Bez ZUS",
+    "Z_ZUS": "Z ZUS",
+    "KOSZTY_20%": "Koszty 20%",
+    "KOSZTY_50%": "Koszty 50%",
+    "CURRENT": "Obecna konfiguracja"
   }
 }

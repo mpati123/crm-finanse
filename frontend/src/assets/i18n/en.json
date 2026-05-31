@@ -357,5 +357,18 @@
     "FRIDAY": "Friday",
     "SATURDAY": "Saturday",
     "SUNDAY": "Sunday"
+  },
+  "TAX_SCENARIOS": {
+    "BEZ_PPK": "Without PPK",
+    "PPK_2%": "PPK 2%",
+    "PPK_4%": "PPK 4%",
+    "SKALA": "Progressive tax scale",
+    "LINIOWY": "Flat tax 19%",
+    "RYCZALT": "Lump-sum tax",
+    "BEZ_ZUS": "Without ZUS",
+    "Z_ZUS": "With ZUS",
+    "KOSZTY_20%": "Costs 20%",
+    "KOSZTY_50%": "Costs 50%",
+    "CURRENT": "Current configuration"
   }
 }

@@ -431,25 +431,10 @@ export class IncomeSourcesComponent implements OnInit {
   }
 
   getScenarioName(scenarioKey: string): string {
-    const names: {[key: string]: string} = {
-      // UoP scenarios
-      'BEZ_PPK': 'Bez PPK',
-      'PPK_2%': 'PPK 2%',
-      'PPK_4%': 'PPK 4%',
-      // B2B scenarios
-      'SKALA': 'Skala podatkowa',
-      'LINIOWY': 'Podatek liniowy 19%',
-      'RYCZALT': 'Ryczałt',
-      // Umowa zlecenie scenarios
-      'BEZ_ZUS': 'Bez ZUS',
-      'Z_ZUS': 'Z ZUS',
-      // Umowa o dzieło scenarios
-      'KOSZTY_20%': 'Koszty 20%',
-      'KOSZTY_50%': 'Koszty 50%',
-      // Current (default)
-      'CURRENT': 'Obecna konfiguracja'
-    };
-    return names[scenarioKey] || scenarioKey;
+    const translationKey = `TAX_SCENARIOS.${scenarioKey}`;
+    const translated = this.translate.instant(translationKey);
+    // Fallback to the key itself if translation not found
+    return translated !== translationKey ? translated : scenarioKey;
   }
 
   getIKZELimit(year: number): number {
