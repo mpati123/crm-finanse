@@ -1,0 +1,272 @@
+<div class="tax-persons-container">
+  <div class="header">
+    <h1>{{ 'TAX_PERSONS.TITLE' | translate }}</h1>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      {{ 'TAX_PERSONS.ADD_PERSON' | translate }}
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    {{ 'COMMON.LOADING' | translate }}
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && taxPersons.length === 0">
+    <p>{{ 'TAX_PERSONS.NO_PERSONS' | translate }}</p>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      {{ 'TAX_PERSONS.ADD_FIRST' | translate }}
+    </button>
+  </div>
+
+  <div class="tax-persons-list" *ngIf="!loading && taxPersons.length > 0">
+    <div class="tax-person-card" *ngFor="let person of taxPersons" [class.inactive]="!person.active">
+      <div class="card-header">
+        <h3>{{ person.name }}</h3>
+        <div class="actions">
+          <button class="btn btn-sm btn-edit" (click)="openEditModal(person)">
+            {{ 'COMMON.EDIT' | translate }}
+          </button>
+          <button class="btn btn-sm btn-danger" (click)="deleteTaxPerson(person.id!)">
+            {{ 'COMMON.DELETE' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="info-grid">
+          <!-- Basic Info -->
+          <div class="info-section">
+            <h4>{{ 'TAX_PERSONS.BASIC_INFO' | translate }}</h4>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.TYPE' | translate }}:</span>
+              <span class="value">{{ 'TAX_PERSONS.TYPE_' + person.type | translate }}</span>
+            </div>
+            <div class="info-row" *ngIf="person.type === 'INDIVIDUAL' && person.pesel">
+              <span class="label">{{ 'TAX_PERSONS.PESEL' | translate }}:</span>
+              <span class="value">{{ person.pesel }}</span>
+            </div>
+            <div class="info-row" *ngIf="person.type === 'COMPANY' && person.nip">
+              <span class="label">{{ 'TAX_PERSONS.NIP' | translate }}:</span>
+              <span class="value">{{ person.nip }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'COMMON.STATUS' | translate }}:</span>
+              <span class="value" [class.active]="person.active" [class.inactive]="!person.active">
+                {{ person.active ? ('COMMON.ACTIVE' | translate) : ('COMMON.INACTIVE' | translate) }}
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.TAX_YEAR' | translate }}:</span>
+              <span class="value">{{ person.taxYear }}</span>
+            </div>
+          </div>
+
+          <!-- PIT Configuration - Only for INDIVIDUAL -->
+          <div class="info-section" *ngIf="person.type === 'INDIVIDUAL'">
+            <h4>{{ 'TAX_PERSONS.PIT_CONFIG' | translate }}</h4>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.PIT2_FILED' | translate }}:</span>
+              <span class="value">{{ person.pit2Filed ? ('COMMON.YES' | translate) : ('COMMON.NO' | translate) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.COST_TYPE' | translate }}:</span>
+              <span class="value">{{ getCostTypeLabel(person.costType) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.JOINT_TAX_RETURN' | translate }}:</span>
+              <span class="value">{{ person.jointTaxReturn ? ('COMMON.YES' | translate) : ('COMMON.NO' | translate) }}</span>
+            </div>
+            <div class="info-row" *ngIf="person.spouseName">
+              <span class="label">{{ 'TAX_PERSONS.SPOUSE' | translate }}:</span>
+              <span class="value">{{ person.spouseName }}</span>
+            </div>
+          </div>
+
+          <!-- B2B Defaults - Only for COMPANY -->
+          <div class="info-section" *ngIf="person.type === 'COMPANY' && person.defaultTaxForm">
+            <h4>{{ 'TAX_PERSONS.B2B_DEFAULTS' | translate }}</h4>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.DEFAULT_TAX_FORM' | translate }}:</span>
+              <span class="value">{{ getTaxFormLabel(person.defaultTaxForm) }}</span>
+            </div>
+            <div class="info-row" *ngIf="person.defaultZusType">
+              <span class="label">{{ 'TAX_PERSONS.DEFAULT_ZUS_TYPE' | translate }}:</span>
+              <span class="value">{{ getZusTypeLabel(person.defaultZusType) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.VAT_PAYER' | translate }}:</span>
+              <span class="value">{{ person.defaultVatPayer ? ('COMMON.YES' | translate) : ('COMMON.NO' | translate) }}</span>
+            </div>
+          </div>
+
+          <!-- Yearly Tracking -->
+          <div class="info-section">
+            <h4>{{ 'TAX_PERSONS.YEARLY_TRACKING' | translate }}</h4>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.CUMULATIVE_GROSS' | translate }}:</span>
+              <span class="value">{{ formatCurrency(person.cumulativeGrossIncome) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.CUMULATIVE_ZUS' | translate }}:</span>
+              <span class="value">{{ formatCurrency(person.cumulativeZusPaid) }}</span>
+            </div>
+            <div class="info-row" *ngIf="person.zusLimitProgress !== undefined">
+              <span class="label">{{ 'TAX_PERSONS.ZUS_LIMIT_PROGRESS' | translate }}:</span>
+              <span class="value">{{ formatPercent(person.zusLimitProgress) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">{{ 'TAX_PERSONS.SECOND_TAX_BRACKET' | translate }}:</span>
+              <span class="value">{{ person.secondTaxBracket ? ('COMMON.YES' | translate) : ('COMMON.NO' | translate) }}</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" (click)="resetYearlyTracking(person.id!)">
+              {{ 'TAX_PERSONS.RESET_YEARLY' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editMode ? ('TAX_PERSONS.EDIT_PERSON' | translate) : ('TAX_PERSONS.NEW_PERSON' | translate) }}</h2>
+        <button class="btn-close" (click)="closeModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form>
+          <!-- Type -->
+          <div class="form-group">
+            <label>{{ 'TAX_PERSONS.TYPE' | translate }} *</label>
+            <select [(ngModel)]="formData.type" name="type" class="form-control" required>
+              <option *ngFor="let type of taxPersonTypes" [value]="type.value">
+                {{ 'TAX_PERSONS.TYPE_' + type.value | translate }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Individual Fields -->
+          <div *ngIf="formData.type === 'INDIVIDUAL'">
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.FIRST_NAME' | translate }} *</label>
+              <input type="text" [(ngModel)]="formData.firstName" name="firstName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.LAST_NAME' | translate }} *</label>
+              <input type="text" [(ngModel)]="formData.lastName" name="lastName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.PESEL' | translate }}</label>
+              <input type="text" [(ngModel)]="formData.pesel" name="pesel" class="form-control" maxlength="11">
+            </div>
+          </div>
+
+          <!-- Company Fields -->
+          <div *ngIf="formData.type === 'COMPANY'">
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.COMPANY_NAME' | translate }} *</label>
+              <input type="text" [(ngModel)]="formData.companyName" name="companyName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.NIP' | translate }}</label>
+              <input type="text" [(ngModel)]="formData.nip" name="nip" class="form-control" maxlength="13">
+            </div>
+          </div>
+
+          <!-- Active -->
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="formData.active" name="active">
+              {{ 'COMMON.ACTIVE' | translate }}
+            </label>
+          </div>
+
+          <!-- PIT Configuration - Only for INDIVIDUAL -->
+          <div *ngIf="formData.type === 'INDIVIDUAL'">
+            <h3>{{ 'TAX_PERSONS.PIT_CONFIG' | translate }}</h3>
+
+            <!-- PIT2 Filed -->
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="formData.pit2Filed" name="pit2Filed">
+                {{ 'TAX_PERSONS.PIT2_FILED' | translate }}
+              </label>
+            </div>
+
+            <!-- Cost Type -->
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.COST_TYPE' | translate }}</label>
+              <select [(ngModel)]="formData.costType" name="costType" class="form-control">
+                <option *ngFor="let ct of costTypes" [value]="ct.value">{{ ct.label }}</option>
+              </select>
+            </div>
+
+            <!-- Joint Tax Return - Always visible for INDIVIDUAL (always on SKALA) -->
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="formData.jointTaxReturn" name="jointTaxReturn">
+                {{ 'TAX_PERSONS.JOINT_TAX_RETURN' | translate }}
+              </label>
+            </div>
+
+            <!-- Spouse - Only when jointTaxReturn is checked -->
+            <div class="form-group" *ngIf="formData.jointTaxReturn">
+              <label>{{ 'TAX_PERSONS.SPOUSE' | translate }}</label>
+              <select [(ngModel)]="formData.spouseId" name="spouseId" class="form-control">
+                <option [value]="null">{{ 'COMMON.SELECT' | translate }}</option>
+                <option *ngFor="let spouse of availableSpouses" [value]="spouse.id">{{ spouse.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tax Year -->
+          <div class="form-group">
+            <label>{{ 'TAX_PERSONS.TAX_YEAR' | translate }}</label>
+            <input type="number" [(ngModel)]="formData.taxYear" name="taxYear" class="form-control">
+          </div>
+
+          <!-- B2B Defaults - Only for COMPANY -->
+          <div *ngIf="formData.type === 'COMPANY'">
+            <h3>{{ 'TAX_PERSONS.B2B_DEFAULTS' | translate }}</h3>
+
+            <!-- Default Tax Form -->
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.DEFAULT_TAX_FORM' | translate }}</label>
+              <select [(ngModel)]="formData.defaultTaxForm" name="defaultTaxForm" class="form-control">
+                <option [value]="null">{{ 'COMMON.NONE' | translate }}</option>
+                <option *ngFor="let tf of taxForms" [value]="tf.value">{{ tf.label }}</option>
+              </select>
+            </div>
+
+            <!-- Default ZUS Type -->
+            <div class="form-group">
+              <label>{{ 'TAX_PERSONS.DEFAULT_ZUS_TYPE' | translate }}</label>
+              <select [(ngModel)]="formData.defaultZusType" name="defaultZusType" class="form-control">
+                <option [value]="null">{{ 'COMMON.NONE' | translate }}</option>
+                <option *ngFor="let zt of zusTypes" [value]="zt.value">{{ zt.label }}</option>
+              </select>
+            </div>
+
+            <!-- Default VAT Payer -->
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="formData.defaultVatPayer" name="defaultVatPayer">
+                {{ 'TAX_PERSONS.VAT_PAYER' | translate }}
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button class="btn btn-primary" (click)="saveTaxPerson()">
+          {{ 'COMMON.SAVE' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

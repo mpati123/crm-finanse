@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Expense, Income, Category, Budget, Dashboard } from '../models/expense.model';
 import { IncomeSource, EnumOption, ZUSTypeOption } from '../models/income-source.model';
 import { ExpenseTemplate, FrequencyOption } from '../models/expense-template.model';
+import { TaxPerson, CostTypeOption } from '../models/tax-person.model';
 
 @Injectable({
   providedIn: 'root'
@@ -211,4 +212,37 @@ export class ApiService {
   getIncomesBySourceAndYear(sourceId: number, year: number): Observable<Income[]> {
     return this.http.get<Income[]>(`${this.baseUrl}/incomes/source/${sourceId}/year/${year}`);
   }
+
+  // Tax Persons
+  getAllTaxPersons(): Observable<TaxPerson[]> {
+    return this.http.get<TaxPerson[]>(`${this.baseUrl}/tax-persons`);
   }
+
+  getActiveTaxPersons(): Observable<TaxPerson[]> {
+    return this.http.get<TaxPerson[]>(`${this.baseUrl}/tax-persons/active`);
+  }
+
+  getTaxPersonById(id: number): Observable<TaxPerson> {
+    return this.http.get<TaxPerson>(`${this.baseUrl}/tax-persons/${id}`);
+  }
+
+  createTaxPerson(taxPerson: TaxPerson): Observable<TaxPerson> {
+    return this.http.post<TaxPerson>(`${this.baseUrl}/tax-persons`, taxPerson);
+  }
+
+  updateTaxPerson(id: number, taxPerson: TaxPerson): Observable<TaxPerson> {
+    return this.http.put<TaxPerson>(`${this.baseUrl}/tax-persons/${id}`, taxPerson);
+  }
+
+  deleteTaxPerson(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/tax-persons/${id}`);
+  }
+
+  resetYearlyTracking(id: number, year: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/tax-persons/${id}/reset-yearly/${year}`, {});
+  }
+
+  getCostTypes(): Observable<CostTypeOption[]> {
+    return this.http.get<CostTypeOption[]>(`${this.baseUrl}/tax-persons/cost-types`);
+  }
+}

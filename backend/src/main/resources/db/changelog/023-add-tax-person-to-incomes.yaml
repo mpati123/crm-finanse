@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 023-add-tax-person-to-incomes
+      author: system
+      changes:
+        - addColumn:
+            tableName: incomes
+            columns:
+              - column:
+                  name: tax_person_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: incomes
+            baseColumnNames: tax_person_id
+            constraintName: fk_incomes_tax_person
+            referencedTableName: tax_persons
+            referencedColumnNames: id
+            onDelete: SET NULL

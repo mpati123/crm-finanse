@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import pl.nehrebeccy.crmfinanse.model.CostType;
 import pl.nehrebeccy.crmfinanse.model.TaxForm;
+import pl.nehrebeccy.crmfinanse.model.TaxPersonType;
 import pl.nehrebeccy.crmfinanse.model.ZUSType;
 
 import java.math.BigDecimal;
@@ -17,9 +18,22 @@ import java.math.BigDecimal;
 public class TaxPersonDTO {
 
     private Long id;
+    private TaxPersonType type;
+
+    // Dla INDIVIDUAL
+    private String firstName;
+    private String lastName;
+    private String pesel;
+
+    // Dla COMPANY
+    private String companyName;
+    private String nip;
+
+    // Wspólne pole
     private String name;
 
     // === Konfiguracja PIT ===
+    private TaxForm taxForm;
     private boolean pit2Filed;
     private CostType costType;
     private boolean jointTaxReturn;
@@ -46,4 +60,7 @@ public class TaxPersonDTO {
     private BigDecimal taxThresholdProgress;    // Procent do progu podatkowego
     private BigDecimal remainingToZusLimit;     // Ile do limitu ZUS
     private BigDecimal remainingToTaxThreshold; // Ile do progu podatkowego
+
+    // === Prognoza roczna ===
+    private BigDecimal yearlyForecast;
 }

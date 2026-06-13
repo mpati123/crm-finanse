@@ -98,7 +98,11 @@ public class RecurringTransactionService {
                 }
             }
 
-            // Ustaw actualHours na podstawie dni roboczych PRZED obliczeniem kwot
+            IncomeCalculationService.YearlyContext yearlyContext =
+                new IncomeCalculationService.YearlyContext(month, cumulativeGross, cumulativeIncome);
+            calculationService.calculateNetIncome(sourceDTO, yearlyContext);
+
+            // Ustaw actualHours na podstawie dni roboczych w miesiacu dla B2B ze stawka godzinowa
             Integer actualHours = null;
             if (source.getRateType() == RateType.HOURLY) {
                 if (source.getIncomeType() == IncomeType.B2B) {
@@ -108,20 +112,10 @@ public class RecurringTransactionService {
                     int prevYear = month == 1 ? year - 1 : year;
                     int workingDays = calculateWorkingDaysInMonth(prevYear, prevMonth);
                     actualHours = workingDays * 8;
-                    // Ustaw w sourceDTO zeby calculateNetIncome uzylo prawidlowych godzin
-                    sourceDTO.setDefaultHoursPerMonth(actualHours);
-                    // KLUCZOWE: Przelicz kwotę na podstawie stawki godzinowej i obliczonych godzin
-                    if (source.getHourlyRate() != null) {
-                        sourceDTO.setAmount(source.getHourlyRate().multiply(BigDecimal.valueOf(actualHours)));
-                    }
                 } else if (source.getDefaultHoursPerMonth() != null) {
                     actualHours = source.getDefaultHoursPerMonth();
                 }
             }
-
-            IncomeCalculationService.YearlyContext yearlyContext =
-                new IncomeCalculationService.YearlyContext(month, cumulativeGross, cumulativeIncome);
-            calculationService.calculateNetIncome(sourceDTO, yearlyContext);
 
             // Określ kwotę przychodu w zależności od typu:
             // - UoP/Zlecenie/O dzieło: kwota netto (na rękę)

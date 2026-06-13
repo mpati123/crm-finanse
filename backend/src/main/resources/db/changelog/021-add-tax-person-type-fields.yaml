@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 021-add-tax-person-type-fields
+      author: system
+      changes:
+        - addColumn:
+            tableName: tax_persons
+            columns:
+              - column:
+                  name: type
+                  type: varchar(50)
+                  defaultValue: 'INDIVIDUAL'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: varchar(255)
+              - column:
+                  name: last_name
+                  type: varchar(255)
+              - column:
+                  name: pesel
+                  type: varchar(11)
+              - column:
+                  name: company_name
+                  type: varchar(255)
+              - column:
+                  name: nip
+                  type: varchar(13)

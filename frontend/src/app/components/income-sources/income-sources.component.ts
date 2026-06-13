@@ -27,6 +27,7 @@ import {
 export class IncomeSourcesComponent implements OnInit {
   incomeSources: IncomeSource[] = [];
   categories: Category[] = [];
+  taxPersons: any[] = [];
   incomeTypes: EnumOption[] = [];
   taxForms: EnumOption[] = [];
   zusTypes: ZUSTypeOption[] = [];
@@ -51,6 +52,7 @@ export class IncomeSourcesComponent implements OnInit {
   ngOnInit(): void {
     this.loadIncomeSources();
     this.loadCategories();
+    this.loadTaxPersons();
     this.loadEnums();
   }
 
@@ -114,6 +116,13 @@ export class IncomeSourcesComponent implements OnInit {
     this.apiService.getCategoriesByType('INCOME').subscribe({
       next: (data) => this.categories = data,
       error: (err) => console.error('Error loading categories:', err)
+    });
+  }
+
+  loadTaxPersons(): void {
+    this.apiService.getActiveTaxPersons().subscribe({
+      next: (persons) => this.taxPersons = persons,
+      error: (err) => console.error('Error loading tax persons:', err)
     });
   }
 

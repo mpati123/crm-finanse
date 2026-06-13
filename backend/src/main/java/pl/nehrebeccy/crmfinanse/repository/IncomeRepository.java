@@ -25,4 +25,11 @@ List<Income> findByIncomeSourceIdAndDateBetween(Long incomeSourceId, LocalDate s
 
     @Query("SELECT YEAR(i.date), MONTH(i.date), SUM(i.amount) FROM Income i GROUP BY YEAR(i.date), MONTH(i.date) ORDER BY YEAR(i.date), MONTH(i.date)")
     List<Object[]> sumAmountByMonth();
+
+    // Przychody dla osoby podatkowej do dzisiejszej daty (nieszacowane = realne)
+    @Query("SELECT i FROM Income i WHERE i.taxPerson.id = :taxPersonId AND i.date <= :upToDate AND (i.estimated = false OR i.estimated IS NULL)")
+    List<Income> findRealIncomesByTaxPersonUpToDate(@Param("taxPersonId") Long taxPersonId, @Param("upToDate") LocalDate upToDate);
+
+    // Przychody dla osoby podatkowej w danym roku
+    List<Income> findByTaxPersonIdAndDateBetween(Long taxPersonId, LocalDate startDate, LocalDate endDate);
 }

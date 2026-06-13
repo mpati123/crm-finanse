@@ -39,3 +39,11 @@ databaseChangeLog:
       file: db/changelog/019-add-default-vat-to-categories.yaml
   - include:
       file: db/changelog/020-migrate-existing-expenses-vat.yaml
+  - include:
+      file: db/changelog/021-add-tax-person-type-fields.yaml
+  - include:
+      file: db/changelog/022-add-tax-form-to-tax-persons.yaml
+  - include:
+      file: db/changelog/023-add-tax-person-to-incomes.yaml
+  - include:
+      file: db/changelog/024-add-tax-person-to-income-sources.yaml

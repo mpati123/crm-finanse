@@ -69,6 +69,8 @@ export interface IncomeSource {
   uopConfig?: UoPConfig;
   umowaZlecenieConfig?: UmowaZlecenieConfig;
   umowaODzieloConfig?: UmowaODzieloConfig;
+  taxPersonId?: number;
+  taxPersonName?: string;
   notes?: string;
   // Wyliczone
   grossAmount?: number; // kwota brutto z VAT (dla B2B)

@@ -12,7 +12,8 @@
     "BUDGETS": "Budgets",
     "CATEGORIES": "Catégories",
     "REPORTS": "Rapports",
-    "SETTINGS": "Paramètres"
+    "SETTINGS": "Paramètres",
+    "TAX_PERSONS": "Persons/Companies"
   },
   "COMMON": {
     "SAVE": "Enregistrer",
@@ -345,5 +346,33 @@
     "KOSZTY_20%": "Frais 20%",
     "KOSZTY_50%": "Frais 50%",
     "CURRENT": "Configuration actuelle"
+  },
+  "TAX_PERSONS": {
+    "TITLE": "Persons and Companies",
+    "ADD_PERSON": "+ Add Person/Company",
+    "EDIT_PERSON": "Edit Person/Company",
+    "NEW_PERSON": "New Person/Company",
+    "ADD_FIRST": "Add First Person/Company",
+    "NO_PERSONS": "No persons/companies configured",
+    "DELETE_CONFIRM": "Are you sure you want to delete this person/company?",
+    "RESET_CONFIRM": "Are you sure you want to reset yearly tracking for year {{year}}?",
+    "NAME": "Name",
+    "BASIC_INFO": "Basic Information",
+    "PIT_CONFIG": "PIT Configuration",
+    "PIT2_FILED": "PIT-2 Filed",
+    "COST_TYPE": "Cost Type",
+    "JOINT_TAX_RETURN": "Joint Tax Return",
+    "SPOUSE": "Spouse",
+    "TAX_YEAR": "Tax Year",
+    "B2B_DEFAULTS": "B2B Defaults",
+    "DEFAULT_TAX_FORM": "Default Tax Form",
+    "DEFAULT_ZUS_TYPE": "Default Social Security Type",
+    "VAT_PAYER": "VAT Payer",
+    "YEARLY_TRACKING": "Yearly Tracking",
+    "CUMULATIVE_GROSS": "Cumulative Gross Income",
+    "CUMULATIVE_ZUS": "Cumulative Social Security",
+    "ZUS_LIMIT_PROGRESS": "Progress to Social Security Limit",
+    "SECOND_TAX_BRACKET": "Second Tax Bracket",
+    "RESET_YEARLY": "Reset Yearly Tracking"
   }
 }

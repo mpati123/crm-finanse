@@ -20,10 +20,36 @@ public class TaxPerson {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private TaxPersonType type = TaxPersonType.INDIVIDUAL;
+
+    // Dla INDIVIDUAL
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
+    @Column(name = "pesel")
+    private String pesel;
+
+    // Dla COMPANY
+    @Column(name = "company_name")
+    private String companyName;
+
+    @Column(name = "nip")
+    private String nip;
+
+    // Wspólne pole wyświetlane (obliczane)
     @Column(nullable = false)
     private String name;
 
     // === Konfiguracja PIT ===
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tax_form")
+    private TaxForm taxForm = TaxForm.SKALA;
+
     @Column(name = "pit2_filed")
     private boolean pit2Filed;
 

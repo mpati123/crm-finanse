@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 022-add-tax-form-to-tax-persons
+      author: system
+      changes:
+        - addColumn:
+            tableName: tax_persons
+            columns:
+              - column:
+                  name: tax_form
+                  type: varchar(50)
+                  defaultValue: 'SKALA'

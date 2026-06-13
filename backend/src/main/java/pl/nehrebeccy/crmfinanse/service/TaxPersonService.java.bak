@@ -3,13 +3,8 @@ package pl.nehrebeccy.crmfinanse.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.nehrebeccy.crmfinanse.dto.IncomeSourceDTO;
 import pl.nehrebeccy.crmfinanse.dto.TaxPersonDTO;
-import pl.nehrebeccy.crmfinanse.model.Income;
-import pl.nehrebeccy.crmfinanse.model.IncomeSource;
 import pl.nehrebeccy.crmfinanse.model.TaxPerson;
-import pl.nehrebeccy.crmfinanse.repository.IncomeRepository;
-import pl.nehrebeccy.crmfinanse.repository.IncomeSourceRepository;
 import pl.nehrebeccy.crmfinanse.repository.TaxPersonRepository;
 
 import java.math.BigDecimal;
@@ -24,9 +19,6 @@ import java.util.stream.Collectors;
 public class TaxPersonService {
 
     private final TaxPersonRepository taxPersonRepository;
-    private final IncomeSourceRepository incomeSourceRepository;
-    private final IncomeSourceService incomeSourceService;
-    private final IncomeRepository incomeRepository;
 
     public List<TaxPersonDTO> getAllTaxPersons() {
         return taxPersonRepository.findAll().stream()
@@ -170,157 +162,7 @@ public class TaxPersonService {
         }
     }
 
-
-    /**
-     * Oblicza skumulowany przychod netto z REALNYCH przychodow (tabela incomes)
-     * dla danej osoby podatkowej od poczatku roku do dzisiaj.
-     */
-    private BigDecimal calculateCumulativeNetFromRealIncomes(TaxPerson entity) {
-        if (entity.getId() == null) {
-            return BigDecimal.ZERO;
-        }
-        int currentYear = LocalDate.now().getYear();
-        LocalDate today = LocalDate.now();
-        LocalDate startOfYear = LocalDate.of(currentYear, 1, 1);
-
-        List<Income> realIncomes = incomeRepository.findRealIncomesByTaxPersonUpToDate(entity.getId(), today);
-
-        BigDecimal totalNet = realIncomes.stream()
-                .filter(income -> !income.getDate().isBefore(startOfYear))
-                .map(income -> {
-                    BigDecimal net = income.getActualAmount(); // Priorytet: actualAmount > netAmount > amount
-                    if (net == null) {
-                        net = income.getNetAmount();
-                    }
-                    if (net == null) {
-                        net = income.getAmount();
-                    }
-                    return net != null ? net : BigDecimal.ZERO;
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return totalNet;
-    }
-
-    /**
-     * Oblicza prognozowana roczna sume = realne przychody + przewidywane na pozostale miesiace.
-     */
-    private BigDecimal calculateYearlyForecast(TaxPerson entity, BigDecimal realCumulative) {
-        if (entity.getId() == null) {
-            return realCumulative;
-        }
-
-        int currentYear = LocalDate.now().getYear();
-        int currentMonth = LocalDate.now().getMonthValue();
-
-        // W grudniu nie ma przyszlych miesiecy
-        if (currentMonth == 12) {
-            return realCumulative;
-        }
-
-        List<IncomeSource> incomeSources = incomeSourceRepository.findByTaxPersonAndActiveTrue(entity);
-        BigDecimal predictedForFutureMonths = BigDecimal.ZERO;
-
-        for (IncomeSource source : incomeSources) {
-            if (source.getId() == null) continue;
-
-            // Sprawdz czy zrodlo jest aktywne w przyszlych miesiacach
-            if (!isSourceActiveInFuturePeriod(source, currentYear, currentMonth)) {
-                continue;
-            }
-
-            IncomeSourceDTO dto = incomeSourceService.getIncomeSourceById(source.getId());
-            if (dto == null) continue;
-
-            BigDecimal monthlyNet = dto.getNetAmount();
-            if (monthlyNet == null) {
-                monthlyNet = dto.getAmount();
-            }
-            if (monthlyNet == null) continue;
-
-            int futureMonths = calculateFutureActiveMonths(source, currentYear, currentMonth);
-            predictedForFutureMonths = predictedForFutureMonths.add(monthlyNet.multiply(BigDecimal.valueOf(futureMonths)));
-        }
-
-        return realCumulative.add(predictedForFutureMonths);
-    }
-
-    /**
-     * Sprawdza czy zrodlo dochodu jest aktywne w przyszlym okresie (od nastepnego miesiaca do konca roku).
-     */
-    private boolean isSourceActiveInFuturePeriod(IncomeSource source, int year, int currentMonth) {
-        LocalDate sourceStart = source.getStartDate();
-        LocalDate sourceEnd = source.getEndDate();
-
-        // Pierwszy dzien nastepnego miesiaca
-        LocalDate futureStart = LocalDate.of(year, currentMonth, 1).plusMonths(1);
-        // Ostatni dzien roku
-        LocalDate futureEnd = LocalDate.of(year, 12, 31);
-
-        // Jesli zrodlo zaczyna sie po koncu okresu - nie jest aktywne
-        if (sourceStart != null && sourceStart.isAfter(futureEnd)) {
-            return false;
-        }
-
-        // Jesli zrodlo konczy sie przed poczatkiem okresu - nie jest aktywne
-        if (sourceEnd != null && sourceEnd.isBefore(futureStart)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Oblicza ile miesiecy zrodlo bedzie aktywne od nastepnego miesiaca do konca roku.
-     */
-    private int calculateFutureActiveMonths(IncomeSource source, int year, int currentMonth) {
-        int firstFutureMonth = currentMonth + 1;
-        if (firstFutureMonth > 12) {
-            return 0;
-        }
-
-        LocalDate sourceStart = source.getStartDate();
-        LocalDate sourceEnd = source.getEndDate();
-
-        // Domyslnie: od nastepnego miesiaca do grudnia
-        int startMonth = firstFutureMonth;
-        int endMonth = 12;
-
-        // Jesli zrodlo zaczyna sie pozniej niz poczatek okresu
-        if (sourceStart != null) {
-            if (sourceStart.getYear() > year) {
-                // Zrodlo zaczyna sie w przyszlym roku - 0 miesiecy w tym roku
-                return 0;
-            }
-            if (sourceStart.getYear() == year && sourceStart.getMonthValue() > firstFutureMonth) {
-                // Zrodlo zaczyna sie pozniej w tym roku
-                startMonth = sourceStart.getMonthValue();
-            }
-        }
-
-        // Jesli zrodlo konczy sie wczesniej niz koniec okresu
-        if (sourceEnd != null) {
-            if (sourceEnd.getYear() < year) {
-                // Zrodlo zakonczylo sie w poprzednim roku - 0 miesiecy
-                return 0;
-            }
-            if (sourceEnd.getYear() == year) {
-                if (sourceEnd.getMonthValue() < firstFutureMonth) {
-                    // Zrodlo zakonczylo sie przed przyszlym okresem
-                    return 0;
-                }
-                // Zrodlo konczy sie w tym roku - ogranicz endMonth
-                endMonth = Math.min(endMonth, sourceEnd.getMonthValue());
-            }
-        }
-
-        return Math.max(0, endMonth - startMonth + 1);
-    }
     private TaxPersonDTO toDTO(TaxPerson entity) {
-        // Oblicz skumulowany przychod netto z realnych przychodow
-        BigDecimal cumulativeNet = calculateCumulativeNetFromRealIncomes(entity);
-        // Oblicz prognozowana roczna sume
-        BigDecimal yearlyForecast = calculateYearlyForecast(entity, cumulativeNet);
         TaxPersonDTO.TaxPersonDTOBuilder builder = TaxPersonDTO.builder()
                 .id(entity.getId())
                 .type(entity.getType())
@@ -331,13 +173,12 @@ public class TaxPersonService {
                 .nip(entity.getNip())
                 .name(entity.getName())
                 .taxYear(entity.getTaxYear())
-                .cumulativeGrossIncome(cumulativeNet)
-                .cumulativeTaxableIncome(cumulativeNet)
+                .cumulativeGrossIncome(entity.getCumulativeGrossIncome())
+                .cumulativeTaxableIncome(entity.getCumulativeTaxableIncome())
                 .cumulativeZusPaid(entity.getCumulativeZusPaid())
                 .zusLimitReached(entity.isZusLimitReached())
                 .secondTaxBracket(entity.isSecondTaxBracket())
-                .active(entity.isActive())
-                .yearlyForecast(yearlyForecast);
+                .active(entity.isActive());
 
         // Add type-specific fields
         if (entity.getType() == pl.nehrebeccy.crmfinanse.model.TaxPersonType.INDIVIDUAL) {
@@ -362,20 +203,24 @@ public class TaxPersonService {
                 ? PolishTaxConstants.TAX_THRESHOLD.multiply(BigDecimal.valueOf(2))
                 : PolishTaxConstants.TAX_THRESHOLD;
 
+        BigDecimal cumulativeGross = entity.getCumulativeGrossIncome() != null
+                ? entity.getCumulativeGrossIncome() : BigDecimal.ZERO;
+        BigDecimal cumulativeTaxable = entity.getCumulativeTaxableIncome() != null
+                ? entity.getCumulativeTaxableIncome() : BigDecimal.ZERO;
 
         // ZUS progress
         BigDecimal zusProgress = zusLimit.compareTo(BigDecimal.ZERO) > 0
-                ? cumulativeNet.multiply(BigDecimal.valueOf(100)).divide(zusLimit, 2, RoundingMode.HALF_UP)
+                ? cumulativeGross.multiply(BigDecimal.valueOf(100)).divide(zusLimit, 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
         builder.zusLimitProgress(zusProgress.min(BigDecimal.valueOf(100)));
-        builder.remainingToZusLimit(zusLimit.subtract(cumulativeNet).max(BigDecimal.ZERO));
+        builder.remainingToZusLimit(zusLimit.subtract(cumulativeGross).max(BigDecimal.ZERO));
 
         // Tax threshold progress
         BigDecimal taxProgress = taxThreshold.compareTo(BigDecimal.ZERO) > 0
-                ? cumulativeNet.multiply(BigDecimal.valueOf(100)).divide(taxThreshold, 2, RoundingMode.HALF_UP)
+                ? cumulativeTaxable.multiply(BigDecimal.valueOf(100)).divide(taxThreshold, 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
         builder.taxThresholdProgress(taxProgress);
-        builder.remainingToTaxThreshold(taxThreshold.subtract(cumulativeNet).max(BigDecimal.ZERO));
+        builder.remainingToTaxThreshold(taxThreshold.subtract(cumulativeTaxable).max(BigDecimal.ZERO));
 
         return builder.build();
     }

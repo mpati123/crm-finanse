@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 024-add-tax-person-to-income-sources
+      author: system
+      changes:
+        - addColumn:
+            tableName: income_sources
+            columns:
+              - column:
+                  name: tax_person_id
+                  type: bigint
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: income_sources
+            baseColumnNames: tax_person_id
+            constraintName: fk_income_sources_tax_person
+            referencedTableName: tax_persons
+            referencedColumnNames: id

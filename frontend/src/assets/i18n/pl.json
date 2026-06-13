@@ -12,7 +12,8 @@
     "BUDGETS": "Budżety",
     "CATEGORIES": "Kategorie",
     "REPORTS": "Raporty",
-    "SETTINGS": "Ustawienia"
+    "SETTINGS": "Ustawienia",
+    "TAX_PERSONS": "Osoby/Firmy"
   },
   "COMMON": {
     "SAVE": "Zapisz",
@@ -375,5 +376,41 @@
     "KOSZTY_20%": "Koszty 20%",
     "KOSZTY_50%": "Koszty 50%",
     "CURRENT": "Obecna konfiguracja"
+  },
+  "TAX_PERSONS": {
+    "TITLE": "Osoby i Firmy",
+    "ADD_PERSON": "+ Dodaj Osobę/Firmę",
+    "EDIT_PERSON": "Edytuj Osobę/Firmę",
+    "NEW_PERSON": "Nowa Osoba/Firma",
+    "ADD_FIRST": "Dodaj Pierwszą Osobę/Firmę",
+    "NO_PERSONS": "Brak skonfigurowanych osób/firm",
+    "DELETE_CONFIRM": "Czy na pewno chcesz usunąć tę osobę/firmę?",
+    "RESET_CONFIRM": "Czy na pewno chcesz zresetować śledzenie roczne dla roku {{year}}?",
+    "NAME": "Nazwa/Imię i Nazwisko",
+    "TYPE": "Typ",
+    "TYPE_INDIVIDUAL": "Osoba fizyczna",
+    "TYPE_COMPANY": "Firma",
+    "FIRST_NAME": "Imię",
+    "LAST_NAME": "Nazwisko",
+    "PESEL": "PESEL",
+    "COMPANY_NAME": "Nazwa firmy",
+    "NIP": "NIP",
+    "BASIC_INFO": "Podstawowe Informacje",
+    "PIT_CONFIG": "Konfiguracja PIT",
+    "PIT2_FILED": "PIT-2 złożony",
+    "COST_TYPE": "Rodzaj kosztów",
+    "JOINT_TAX_RETURN": "Wspólne rozliczenie",
+    "SPOUSE": "Współmałżonek",
+    "TAX_YEAR": "Rok podatkowy",
+    "B2B_DEFAULTS": "Domyślne wartości B2B",
+    "DEFAULT_TAX_FORM": "Domyślna forma opodatkowania",
+    "DEFAULT_ZUS_TYPE": "Domyślny typ ZUS",
+    "VAT_PAYER": "Płatnik VAT",
+    "YEARLY_TRACKING": "Śledzenie roczne",
+    "CUMULATIVE_GROSS": "Skumulowany przychód brutto",
+    "CUMULATIVE_ZUS": "Skumulowany ZUS",
+    "ZUS_LIMIT_PROGRESS": "Postęp do limitu ZUS",
+    "SECOND_TAX_BRACKET": "Drugi próg podatkowy",
+    "RESET_YEARLY": "Resetuj śledzenie roczne"
   }
 }

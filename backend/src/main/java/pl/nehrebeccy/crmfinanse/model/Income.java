@@ -60,4 +60,8 @@ public class Income {
 
     @Column(name = "income_source_id")
     private Long incomeSourceId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tax_person_id")
+    private TaxPerson taxPerson;
 }

@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import pl.nehrebeccy.crmfinanse.model.IncomeSource;
 import pl.nehrebeccy.crmfinanse.model.IncomeType;
+import pl.nehrebeccy.crmfinanse.model.TaxPerson;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -12,6 +13,10 @@ import java.util.List;
 public interface IncomeSourceRepository extends JpaRepository<IncomeSource, Long> {
 
     List<IncomeSource> findByActiveTrue();
+
+    List<IncomeSource> findByTaxPerson(TaxPerson taxPerson);
+
+    List<IncomeSource> findByTaxPersonAndActiveTrue(TaxPerson taxPerson);
 
     List<IncomeSource> findByIncomeType(IncomeType incomeType);
 

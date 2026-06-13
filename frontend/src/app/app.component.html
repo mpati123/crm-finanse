@@ -48,6 +48,12 @@
           <span class="label">{{ 'NAV.EXPENSE_TEMPLATES' | translate }}</span>
         </a>
       </li>
+      <li>
+        <a routerLink="/tax-persons" routerLinkActive="active" (click)="menuOpen = false">
+          <span class="icon">&#128100;</span>
+          <span class="label">{{ 'NAV.TAX_PERSONS' | translate }}</span>
+        </a>
+      </li>
     </ul>
     <div class="language-selector">
       <select [(ngModel)]="currentLang" (change)="changeLanguage(currentLang)">

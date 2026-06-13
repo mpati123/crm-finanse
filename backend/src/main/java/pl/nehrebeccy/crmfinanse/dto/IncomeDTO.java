@@ -42,4 +42,6 @@ public class IncomeDTO {
     private Integer overtimeHours150;
     private Integer overtimeHours200;
     private Long incomeSourceId;
+    private Long taxPersonId;
+    private String taxPersonName;
 }

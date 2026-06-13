@@ -27,6 +27,8 @@ export interface Income {
   overtimeHours200?: number;
   incomeSourceId?: number;
   actualAmount?: number;
+  taxPersonId?: number;
+  taxPersonName?: string;
 }
 
 export interface Category {

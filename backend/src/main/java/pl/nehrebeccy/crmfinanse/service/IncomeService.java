@@ -6,8 +6,10 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.nehrebeccy.crmfinanse.dto.IncomeDTO;
 import pl.nehrebeccy.crmfinanse.model.Category;
 import pl.nehrebeccy.crmfinanse.model.Income;
+import pl.nehrebeccy.crmfinanse.model.TaxPerson;
 import pl.nehrebeccy.crmfinanse.repository.CategoryRepository;
 import pl.nehrebeccy.crmfinanse.repository.IncomeRepository;
+import pl.nehrebeccy.crmfinanse.repository.TaxPersonRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,6 +23,7 @@ public class IncomeService {
 
     private final IncomeRepository incomeRepository;
     private final CategoryRepository categoryRepository;
+    private final TaxPersonRepository taxPersonRepository;
 
     public List<IncomeDTO> getAllIncomes() {
         return incomeRepository.findAll().stream()
@@ -72,6 +75,14 @@ public class IncomeService {
             income.setCategory(category);
         }
 
+        if (dto.getTaxPersonId() != null) {
+            TaxPerson taxPerson = taxPersonRepository.findById(dto.getTaxPersonId())
+                    .orElseThrow(() -> new RuntimeException("Osoba podatkowa nie znaleziona: " + dto.getTaxPersonId()));
+            income.setTaxPerson(taxPerson);
+        } else {
+            income.setTaxPerson(null);
+        }
+
         return toDTO(incomeRepository.save(income));
     }
 
@@ -104,6 +115,8 @@ public class IncomeService {
                 .overtimeHours150(income.getOvertimeHours150())
                 .overtimeHours200(income.getOvertimeHours200())
                 .incomeSourceId(income.getIncomeSourceId())
+                .taxPersonId(income.getTaxPerson() != null ? income.getTaxPerson().getId() : null)
+                .taxPersonName(income.getTaxPerson() != null ? income.getTaxPerson().getName() : null)
                 .build();
     }
 
@@ -128,6 +141,12 @@ public class IncomeService {
             Category category = categoryRepository.findById(dto.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Kategoria nie znaleziona: " + dto.getCategoryId()));
             income.setCategory(category);
+        }
+
+        if (dto.getTaxPersonId() != null) {
+            TaxPerson taxPerson = taxPersonRepository.findById(dto.getTaxPersonId())
+                    .orElseThrow(() -> new RuntimeException("Osoba podatkowa nie znaleziona: " + dto.getTaxPersonId()));
+            income.setTaxPerson(taxPerson);
         }
 
         return income;

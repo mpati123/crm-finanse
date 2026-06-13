@@ -57,6 +57,11 @@
           <span class="value">{{ source.personName }}</span>
         </div>
 
+        <div *ngIf="source.taxPersonName" class="info-row">
+          <span class="label">Osoba/Firma podatkowa:</span>
+          <span class="value">{{ source.taxPersonName }}</span>
+        </div>
+
         <div class="amounts">
           <div class="amount-item">
             <span class="label">{{ getAmountTypeLabel(source) }}</span>
@@ -193,6 +198,13 @@
               <select id="category" [(ngModel)]="newSource.categoryId" name="categoryId">
                 <option [ngValue]="null">-- {{ 'CATEGORIES.NO_CATEGORY' | translate }} --</option>
                 <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="taxPerson">Osoba/Firma podatkowa</label>
+              <select id="taxPerson" [(ngModel)]="newSource.taxPersonId" name="taxPersonId">
+                <option [ngValue]="null">-- Brak --</option>
+                <option *ngFor="let person of taxPersons" [ngValue]="person.id">{{ person.name }}</option>
               </select>
             </div>
           </div>

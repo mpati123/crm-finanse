@@ -6,6 +6,7 @@ import { CategoriesComponent } from './components/categories/categories.componen
 import { BudgetComponent } from './components/budget/budget.component';
 import { IncomeSourcesComponent } from './components/income-sources/income-sources.component';
 import { ExpenseTemplatesComponent } from './components/expense-templates/expense-templates.component';
+import { TaxPersonsComponent } from './components/tax-persons/tax-persons.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
@@ -16,5 +17,6 @@ export const routes: Routes = [
   { path: 'budget', component: BudgetComponent },
   { path: 'income-sources', component: IncomeSourcesComponent },
   { path: 'expense-templates', component: ExpenseTemplatesComponent },
+  { path: 'tax-persons', component: TaxPersonsComponent },
   { path: '**', redirectTo: '/dashboard' }
 ];

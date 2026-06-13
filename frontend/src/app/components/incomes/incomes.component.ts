@@ -15,6 +15,7 @@ import { Income, Category } from '../../models/expense.model';
 export class IncomesComponent implements OnInit {
   incomes: Income[] = [];
   categories: Category[] = [];
+  taxPersons: any[] = [];
   selectedYear: number = new Date().getFullYear();
   selectedMonth: number = new Date().getMonth() + 1;
   loading = false;
@@ -64,6 +65,7 @@ export class IncomesComponent implements OnInit {
     this.loadIncomes();
     this.loadIncomeSources();
     this.loadCategories();
+    this.loadTaxPersons();
   }
 
   loadIncomes(): void {
@@ -111,6 +113,13 @@ export class IncomesComponent implements OnInit {
     this.apiService.getActiveIncomeSources().subscribe({
       next: (sources) => this.incomeSources = sources,
       error: (err) => console.error('Error loading income sources:', err)
+    });
+  }
+
+  loadTaxPersons(): void {
+    this.apiService.getActiveTaxPersons().subscribe({
+      next: (persons) => this.taxPersons = persons,
+      error: (err) => console.error('Error loading tax persons:', err)
     });
   }
 
@@ -217,46 +226,43 @@ export class IncomesComponent implements OnInit {
     const sourcesMap = new Map<string, {id: number, name: string, total?: number, gross?: number, net?: number, personName?: string, isB2B?: boolean}>();
 
     this.yearToDateIncomes.forEach(income => {
-      if (income.incomeSourceId) {
-        const source = this.incomeSources.find(s => s.id === income.incomeSourceId);
-        const isB2B = source?.incomeType === 'B2B';
-        const personName = source?.personName;
+      const source = income.incomeSourceId ? this.incomeSources.find(s => s.id === income.incomeSourceId) : null;
+      const isB2B = source?.incomeType === 'B2B';
 
-        // Dla B2B tworzymy osobny klucz per osoba
-        const key = isB2B && personName
-          ? `${income.incomeSourceId}-${personName}`
-          : `${income.incomeSourceId}`;
+      // Priorytet: taxPerson z przychodu, następnie z źródła, na końcu brak
+      const taxPersonId = income.taxPersonId || source?.taxPersonId;
+      const taxPersonName = income.taxPersonName || source?.taxPersonName;
 
-        const existingSource = sourcesMap.get(key);
+      // Klucz według osoby podatkowej
+      const key = taxPersonId ? `tax-${taxPersonId}` : `source-${income.incomeSourceId || 'unknown'}`;
 
-        if (existingSource) {
-          if (isB2B) {
-            existingSource.gross = (existingSource.gross || 0) + income.amount;
-            existingSource.net = (existingSource.net || 0) + ((income as any).netAmount || 0);
-          } else {
-            existingSource.total = (existingSource.total || 0) + (income.actualAmount || income.amount);
-          }
+      const existingEntry = sourcesMap.get(key);
+
+      if (existingEntry) {
+        if (isB2B) {
+          existingEntry.gross = (existingEntry.gross || 0) + income.amount;
+          existingEntry.net = (existingEntry.net || 0) + ((income as any).netAmount || 0);
         } else {
-          const displayName = isB2B && personName
-            ? `${source?.name || income.name} (${personName})`
-            : source?.name || income.name;
-
-          const sourceData: any = {
-            id: income.incomeSourceId,
-            name: displayName,
-            personName,
-            isB2B
-          };
-
-          if (isB2B) {
-            sourceData.gross = income.amount;
-            sourceData.net = (income as any).netAmount || 0;
-          } else {
-            sourceData.total = income.actualAmount || income.amount;
-          }
-
-          sourcesMap.set(key, sourceData);
+          existingEntry.total = (existingEntry.total || 0) + (income.actualAmount || income.amount);
         }
+      } else {
+        const displayName = taxPersonName || source?.name || income.name;
+
+        const entryData: any = {
+          id: taxPersonId || income.incomeSourceId || 0,
+          name: displayName,
+          personName: taxPersonName,
+          isB2B
+        };
+
+        if (isB2B) {
+          entryData.gross = income.amount;
+          entryData.net = (income as any).netAmount || 0;
+        } else {
+          entryData.total = income.actualAmount || income.amount;
+        }
+
+        sourcesMap.set(key, entryData);
       }
     });
 
