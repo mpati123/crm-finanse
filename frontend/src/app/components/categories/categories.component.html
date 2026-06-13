@@ -4,12 +4,62 @@
     <button class="btn-primary" (click)="openForm()">+ {{ 'CATEGORIES.ADD_CATEGORY' | translate }}</button>
   </header>
 
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <input type="text" [(ngModel)]="filterText" (ngModelChange)="onFilterChange()"
+             placeholder="Szukaj..." class="filter-input">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterType" (ngModelChange)="onFilterChange()">
+        <option value="ALL">-- Wszystkie typy --</option>
+        <option value="EXPENSE">{{ 'CATEGORY_TYPES.EXPENSE' | translate }}</option>
+        <option value="INCOME">{{ 'CATEGORY_TYPES.INCOME' | translate }}</option>
+      </select>
+    </div>
+    <div class="filter-group sort-controls">
+      <label>Sortuj:</label>
+      <button class="btn-sort" [class.active]="sortColumn === 'name'" (click)="sort('name')">
+        Nazwa {{ getSortIcon('name') }}
+      </button>
+      <button class="btn-sort" [class.active]="sortColumn === 'type'" (click)="sort('type')">
+        Typ {{ getSortIcon('type') }}
+      </button>
+    </div>
+    <button *ngIf="filterText || filterType !== 'ALL'"
+            class="btn-clear" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span class="label">Wszystkie:</span>
+      <span class="value">{{ categories.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Wyświetlanych:</span>
+      <span class="value">{{ filteredCategories.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label expense">Wydatki:</span>
+      <span class="value">{{ getExpenseCategories().length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label income">Przychody:</span>
+      <span class="value">{{ getIncomeCategories().length }}</span>
+    </div>
+  </div>
+
   <div *ngIf="loading" class="loading">
     <div class="spinner"></div>
     <p>{{ 'CATEGORIES.LOADING' | translate }}</p>
   </div>
 
-  <div *ngIf="!loading" class="categories-grid">
+  <div *ngIf="!loading && filteredCategories.length === 0 && categories.length > 0" class="empty-state">
+    <p>Brak wyników dla wybranych filtrów</p>
+    <button class="btn-secondary" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
+  <div *ngIf="!loading && filteredCategories.length > 0" class="categories-grid">
     <div class="category-section">
       <h2>{{ 'CATEGORIES.EXPENSE_CATEGORIES' | translate }}</h2>
       <div class="category-list">

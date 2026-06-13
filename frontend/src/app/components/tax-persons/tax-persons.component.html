@@ -6,6 +6,56 @@
     </button>
   </div>
 
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <input type="text" [(ngModel)]="filterText" (ngModelChange)="onFilterChange()"
+             placeholder="Szukaj po nazwie, PESEL, NIP..." class="filter-input">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterType" (ngModelChange)="onFilterChange()">
+        <option value="ALL">-- Wszystkie typy --</option>
+        <option value="INDIVIDUAL">{{ 'TAX_PERSONS.TYPE_INDIVIDUAL' | translate }}</option>
+        <option value="COMPANY">{{ 'TAX_PERSONS.TYPE_COMPANY' | translate }}</option>
+      </select>
+    </div>
+    <div class="filter-group checkbox">
+      <label>
+        <input type="checkbox" [(ngModel)]="filterActiveOnly" (ngModelChange)="onFilterChange()">
+        Tylko aktywne
+      </label>
+    </div>
+    <div class="filter-group sort-controls">
+      <label>Sortuj:</label>
+      <button class="btn-sort" [class.active]="sortColumn === 'name'" (click)="sort('name')">
+        Nazwa {{ getSortIcon('name') }}
+      </button>
+      <button class="btn-sort" [class.active]="sortColumn === 'type'" (click)="sort('type')">
+        Typ {{ getSortIcon('type') }}
+      </button>
+      <button class="btn-sort" [class.active]="sortColumn === 'cumulativeGrossIncome'" (click)="sort('cumulativeGrossIncome')">
+        Przychód {{ getSortIcon('cumulativeGrossIncome') }}
+      </button>
+    </div>
+    <button *ngIf="filterText || filterType !== 'ALL' || filterActiveOnly"
+            class="btn-clear" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-item">
+      <span class="label">Wszystkie:</span>
+      <span class="value">{{ taxPersons.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Wyświetlanych:</span>
+      <span class="value">{{ filteredTaxPersons.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Aktywne:</span>
+      <span class="value">{{ getActiveCount() }}</span>
+    </div>
+  </div>
+
   <div class="loading" *ngIf="loading">
     {{ 'COMMON.LOADING' | translate }}
   </div>
@@ -17,8 +67,13 @@
     </button>
   </div>
 
-  <div class="tax-persons-list" *ngIf="!loading && taxPersons.length > 0">
-    <div class="tax-person-card" *ngFor="let person of taxPersons" [class.inactive]="!person.active">
+  <div class="empty-state" *ngIf="!loading && filteredTaxPersons.length === 0 && taxPersons.length > 0">
+    <p>Brak wyników dla wybranych filtrów</p>
+    <button class="btn btn-secondary" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
+  <div class="tax-persons-list" *ngIf="!loading && filteredTaxPersons.length > 0">
+    <div class="tax-person-card" *ngFor="let person of filteredTaxPersons" [class.inactive]="!person.active">
       <div class="card-header">
         <h3>{{ person.name }}</h3>
         <div class="actions">

@@ -69,6 +69,55 @@
   }
 }
 
+// Filters
+.filters-bar {
+  display: flex;
+  gap: 16px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  align-items: center;
+
+  .filter-group {
+    flex: 1;
+    min-width: 150px;
+    max-width: 250px;
+
+    input, select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+
+      &:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      }
+    }
+  }
+
+  .btn-clear {
+    padding: 8px 16px;
+    background: #fee2e2;
+    color: #991b1b;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #fecaca;
+    }
+  }
+}
+
 .summary-bar {
   display: flex;
   gap: 32px;
@@ -150,6 +199,16 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
       border-bottom: 1px solid #e5e7eb;
+
+      &.sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s;
+
+        &:hover {
+          background: #f3f4f6;
+        }
+      }
     }
 
     td {
@@ -203,6 +262,74 @@
 
   &.delete:hover {
     background: #fee2e2;
+  }
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  .pagination-info {
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  .pagination-controls {
+    display: flex;
+    gap: 4px;
+
+    .btn-page {
+      min-width: 36px;
+      height: 36px;
+      padding: 0 8px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover:not(:disabled) {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      &.active {
+        background: #10b981;
+        border-color: #10b981;
+        color: white;
+      }
+    }
+  }
+
+  .page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    label {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    select {
+      padding: 6px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+    }
   }
 }
 

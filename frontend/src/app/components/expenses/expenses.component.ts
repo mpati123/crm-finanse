@@ -14,12 +14,27 @@ import { Expense, Category } from '../../models/expense.model';
 })
 export class ExpensesComponent implements OnInit {
   expenses: Expense[] = [];
+  filteredExpenses: Expense[] = [];
   categories: Category[] = [];
   selectedYear: number = new Date().getFullYear();
   selectedMonth: number = new Date().getMonth() + 1;
   loading = false;
   showForm = false;
   editingExpense: Expense | null = null;
+
+  // Filtering
+  filterText = '';
+  filterCategory: number | null = null;
+  filterStatus: string | null = null;
+
+  // Sorting
+  sortColumn: 'name' | 'amount' | 'date' | 'categoryName' | 'status' = 'date';
+  sortDirection: 'asc' | 'desc' = 'desc';
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 15;
+  pageSizeOptions = [10, 15, 25, 50];
 
   newExpense: Expense = {
     name: '',
@@ -60,13 +75,11 @@ export class ExpensesComponent implements OnInit {
 
   loadExpenses(): void {
     this.loading = true;
-    // Najpierw automatycznie generuj z szablonów, potem pobierz dane
     this.apiService.generateExpensesForMonth(this.selectedYear, this.selectedMonth).subscribe({
       next: () => {
         this.fetchExpenses();
       },
       error: () => {
-        // Jeśli generowanie nie zadziała, i tak pobierz istniejące dane
         this.fetchExpenses();
       }
     });
@@ -76,6 +89,7 @@ export class ExpensesComponent implements OnInit {
     this.apiService.getExpensesByMonth(this.selectedYear, this.selectedMonth).subscribe({
       next: (data) => {
         this.expenses = data;
+        this.applyFiltersAndSort();
         this.loading = false;
       },
       error: (err) => {
@@ -93,7 +107,136 @@ export class ExpensesComponent implements OnInit {
   }
 
   onMonthChange(): void {
+    this.currentPage = 1;
     this.loadExpenses();
+  }
+
+  // === Filtering ===
+  applyFiltersAndSort(): void {
+    let result = [...this.expenses];
+
+    if (this.filterText) {
+      const searchLower = this.filterText.toLowerCase();
+      result = result.filter(expense =>
+        expense.name.toLowerCase().includes(searchLower) ||
+        (expense.categoryName && expense.categoryName.toLowerCase().includes(searchLower))
+      );
+    }
+
+    if (this.filterCategory) {
+      result = result.filter(expense => expense.categoryId === this.filterCategory);
+    }
+
+    if (this.filterStatus) {
+      result = result.filter(expense => expense.status === this.filterStatus);
+    }
+
+    result.sort((a, b) => {
+      let valueA: any;
+      let valueB: any;
+
+      switch (this.sortColumn) {
+        case 'name':
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+          break;
+        case 'amount':
+          valueA = a.amount;
+          valueB = b.amount;
+          break;
+        case 'date':
+          valueA = new Date(a.date).getTime();
+          valueB = new Date(b.date).getTime();
+          break;
+        case 'categoryName':
+          valueA = (a.categoryName || '').toLowerCase();
+          valueB = (b.categoryName || '').toLowerCase();
+          break;
+        case 'status':
+          valueA = a.status.toLowerCase();
+          valueB = b.status.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (valueA < valueB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valueA > valueB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    this.filteredExpenses = result;
+
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = 1;
+    }
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.applyFiltersAndSort();
+  }
+
+  clearFilters(): void {
+    this.filterText = '';
+    this.filterCategory = null;
+    this.filterStatus = null;
+    this.currentPage = 1;
+    this.applyFiltersAndSort();
+  }
+
+  // === Sorting ===
+  sort(column: 'name' | 'amount' | 'date' | 'categoryName' | 'status'): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applyFiltersAndSort();
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) return '';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
+
+  // === Pagination ===
+  get paginatedExpenses(): Expense[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.filteredExpenses.slice(start, end);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredExpenses.length / this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
+
+    if (end - start + 1 < maxVisiblePages) {
+      start = Math.max(1, end - maxVisiblePages + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.applyFiltersAndSort();
   }
 
   openForm(expense?: Expense): void {
@@ -167,7 +310,7 @@ export class ExpensesComponent implements OnInit {
   }
 
   getTotalAmount(): number {
-    return this.expenses.reduce((sum, e) => sum + e.amount, 0);
+    return this.filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
   }
 
   formatCurrency(amount: number): string {

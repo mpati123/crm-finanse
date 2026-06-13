@@ -14,10 +14,32 @@
     </div>
   </header>
 
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <input type="text" [(ngModel)]="filterText" (ngModelChange)="onFilterChange()"
+             placeholder="Szukaj..." class="filter-input">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterCategory" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">-- Wszystkie kategorie --</option>
+        <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterTaxPerson" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">-- Wszystkie osoby --</option>
+        <option *ngFor="let person of taxPersons" [ngValue]="person.id">{{ person.name }}</option>
+      </select>
+    </div>
+    <button *ngIf="filterText || filterCategory || filterTaxPerson"
+            class="btn-clear" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
   <div class="summary-bar">
     <div class="summary-item">
       <span class="label">{{ 'EXPENSES.COUNT' | translate }}:</span>
-      <span class="value">{{ incomes.length }}</span>
+      <span class="value">{{ filteredIncomes.length }}</span>
     </div>
     <div class="summary-item">
       <span class="label">{{ 'EXPENSES.SUM' | translate }}:</span>
@@ -53,33 +75,41 @@
     </div>
   </div>
 
-
-
   <div *ngIf="loading" class="loading">
     <div class="spinner"></div>
     <p>{{ 'COMMON.LOADING' | translate }}</p>
   </div>
 
-  <div *ngIf="!loading && incomes.length === 0" class="empty-state">
+  <div *ngIf="!loading && filteredIncomes.length === 0" class="empty-state">
     <p>{{ 'INCOMES.NO_INCOMES' | translate }}</p>
     <button class="btn-primary" (click)="openForm()">{{ 'INCOMES.ADD_INCOME' | translate }}</button>
   </div>
 
-  <div *ngIf="!loading && incomes.length > 0" class="incomes-table">
+  <div *ngIf="!loading && filteredIncomes.length > 0" class="incomes-table">
     <table>
       <thead>
         <tr>
-          <th>{{ 'COMMON.NAME' | translate }}</th>
-          <th>{{ 'COMMON.CATEGORY' | translate }}</th>
-          <th>Osoba/Firma</th>
-          <th>Kwota szacunkowa</th>
+          <th class="sortable" (click)="sort('name')">
+            {{ 'COMMON.NAME' | translate }} {{ getSortIcon('name') }}
+          </th>
+          <th class="sortable" (click)="sort('categoryName')">
+            {{ 'COMMON.CATEGORY' | translate }} {{ getSortIcon('categoryName') }}
+          </th>
+          <th class="sortable" (click)="sort('taxPersonName')">
+            Osoba/Firma {{ getSortIcon('taxPersonName') }}
+          </th>
+          <th class="sortable" (click)="sort('amount')">
+            Kwota szacunkowa {{ getSortIcon('amount') }}
+          </th>
           <th>Rzeczywista kwota</th>
-          <th>{{ 'COMMON.DATE' | translate }}</th>
+          <th class="sortable" (click)="sort('date')">
+            {{ 'COMMON.DATE' | translate }} {{ getSortIcon('date') }}
+          </th>
           <th>{{ 'COMMON.ACTIONS' | translate }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let income of incomes">
+        <tr *ngFor="let income of paginatedIncomes">
           <td class="name-cell">
             <span class="name">{{ income.name }}</span>
             <span *ngIf="income.recurring" class="recurring-badge">{{ 'INCOMES.RECURRING' | translate }}</span>
@@ -100,6 +130,29 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Strona {{ currentPage }} z {{ totalPages }} ({{ filteredIncomes.length }} rekordów)
+      </div>
+      <div class="pagination-controls">
+        <button class="btn-page" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
+        <button class="btn-page" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+        <button *ngFor="let page of pageNumbers"
+                class="btn-page"
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)">{{ page }}</button>
+        <button class="btn-page" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">›</button>
+        <button class="btn-page" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">»</button>
+      </div>
+      <div class="page-size-selector">
+        <label>Na stronie:</label>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <!-- Modal Form -->

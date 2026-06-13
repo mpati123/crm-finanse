@@ -14,6 +14,7 @@ import { Income, Category } from '../../models/expense.model';
 })
 export class IncomesComponent implements OnInit {
   incomes: Income[] = [];
+  filteredIncomes: Income[] = [];
   categories: Category[] = [];
   taxPersons: any[] = [];
   selectedYear: number = new Date().getFullYear();
@@ -24,6 +25,20 @@ export class IncomesComponent implements OnInit {
   yearToDateIncomes: Income[] = [];
   incomeSources: any[] = [];
   uniqueIncomeSources: Array<{id: number, name: string, total?: number, gross?: number, net?: number, personName?: string, isB2B?: boolean}> = [];
+
+  // Filtering
+  filterText = '';
+  filterCategory: number | null = null;
+  filterTaxPerson: number | null = null;
+
+  // Sorting
+  sortColumn: 'name' | 'amount' | 'date' | 'categoryName' | 'taxPersonName' = 'date';
+  sortDirection: 'asc' | 'desc' = 'desc';
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 15;
+  pageSizeOptions = [10, 15, 25, 50];
 
   newIncome: Income = {
     name: '',
@@ -70,13 +85,11 @@ export class IncomesComponent implements OnInit {
 
   loadIncomes(): void {
     this.loading = true;
-    // Najpierw automatycznie generuj ze źródeł, potem pobierz dane
     this.apiService.generateIncomesForMonth(this.selectedYear, this.selectedMonth).subscribe({
       next: () => {
         this.fetchIncomes();
       },
       error: () => {
-        // Jeśli generowanie nie zadziała, i tak pobierz istniejące dane
         this.fetchIncomes();
       }
     });
@@ -86,6 +99,7 @@ export class IncomesComponent implements OnInit {
     this.apiService.getIncomesByMonth(this.selectedYear, this.selectedMonth).subscribe({
       next: (data) => {
         this.incomes = data;
+        this.applyFiltersAndSort();
         this.loading = false;
         this.loadYearToDateIncomes();
       },
@@ -104,10 +118,10 @@ export class IncomesComponent implements OnInit {
   }
 
   onMonthChange(): void {
+    this.currentPage = 1;
     this.loadIncomes();
     this.loadYearToDateIncomes();
   }
-
 
   loadIncomeSources(): void {
     this.apiService.getActiveIncomeSources().subscribe({
@@ -142,6 +156,134 @@ export class IncomesComponent implements OnInit {
     });
   }
 
+  // === Filtering ===
+  applyFiltersAndSort(): void {
+    let result = [...this.incomes];
+
+    if (this.filterText) {
+      const searchLower = this.filterText.toLowerCase();
+      result = result.filter(income =>
+        income.name.toLowerCase().includes(searchLower) ||
+        (income.categoryName && income.categoryName.toLowerCase().includes(searchLower)) ||
+        (income.taxPersonName && income.taxPersonName.toLowerCase().includes(searchLower))
+      );
+    }
+
+    if (this.filterCategory) {
+      result = result.filter(income => income.categoryId === this.filterCategory);
+    }
+
+    if (this.filterTaxPerson) {
+      result = result.filter(income => income.taxPersonId === this.filterTaxPerson);
+    }
+
+    result.sort((a, b) => {
+      let valueA: any;
+      let valueB: any;
+
+      switch (this.sortColumn) {
+        case 'name':
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+          break;
+        case 'amount':
+          valueA = a.amount;
+          valueB = b.amount;
+          break;
+        case 'date':
+          valueA = new Date(a.date).getTime();
+          valueB = new Date(b.date).getTime();
+          break;
+        case 'categoryName':
+          valueA = (a.categoryName || '').toLowerCase();
+          valueB = (b.categoryName || '').toLowerCase();
+          break;
+        case 'taxPersonName':
+          valueA = (a.taxPersonName || '').toLowerCase();
+          valueB = (b.taxPersonName || '').toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (valueA < valueB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valueA > valueB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    this.filteredIncomes = result;
+
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = 1;
+    }
+  }
+
+  onFilterChange(): void {
+    this.currentPage = 1;
+    this.applyFiltersAndSort();
+  }
+
+  clearFilters(): void {
+    this.filterText = '';
+    this.filterCategory = null;
+    this.filterTaxPerson = null;
+    this.currentPage = 1;
+    this.applyFiltersAndSort();
+  }
+
+  // === Sorting ===
+  sort(column: 'name' | 'amount' | 'date' | 'categoryName' | 'taxPersonName'): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applyFiltersAndSort();
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) return '↕️';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
+
+  // === Pagination ===
+  get paginatedIncomes(): Income[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.filteredIncomes.slice(start, end);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredIncomes.length / this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
+
+    if (end - start + 1 < maxVisiblePages) {
+      start = Math.max(1, end - maxVisiblePages + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+    this.applyFiltersAndSort();
+  }
 
   openForm(income?: Income): void {
     if (income) {
@@ -201,7 +343,7 @@ export class IncomesComponent implements OnInit {
   }
 
   getTotalAmount(): number {
-    return this.incomes.reduce((sum, i) => sum + i.amount, 0);
+    return this.filteredIncomes.reduce((sum, i) => sum + i.amount, 0);
   }
 
   formatCurrency(amount: number): string {
@@ -229,11 +371,9 @@ export class IncomesComponent implements OnInit {
       const source = income.incomeSourceId ? this.incomeSources.find(s => s.id === income.incomeSourceId) : null;
       const isB2B = source?.incomeType === 'B2B';
 
-      // Priorytet: taxPerson z przychodu, następnie z źródła, na końcu brak
       const taxPersonId = income.taxPersonId || source?.taxPersonId;
       const taxPersonName = income.taxPersonName || source?.taxPersonName;
 
-      // Klucz według osoby podatkowej
       const key = taxPersonId ? `tax-${taxPersonId}` : `source-${income.incomeSourceId || 'unknown'}`;
 
       const existingEntry = sourcesMap.get(key);

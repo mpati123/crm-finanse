@@ -15,10 +15,20 @@ import { EnumOption, ZUSTypeOption } from '../../models/income-source.model';
 })
 export class TaxPersonsComponent implements OnInit {
   taxPersons: TaxPerson[] = [];
+  filteredTaxPersons: TaxPerson[] = [];
   loading = false;
   showModal = false;
   editMode = false;
   currentTaxPerson: TaxPerson | null = null;
+
+  // Filtering
+  filterText = '';
+  filterType: 'ALL' | 'INDIVIDUAL' | 'COMPANY' = 'ALL';
+  filterActiveOnly = false;
+
+  // Sorting
+  sortColumn: 'name' | 'type' | 'taxYear' | 'cumulativeGrossIncome' = 'name';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Options for dropdowns
   taxPersonTypes: { value: TaxPersonType; label: string }[] = [
@@ -64,6 +74,7 @@ export class TaxPersonsComponent implements OnInit {
     this.apiService.getAllTaxPersons().subscribe({
       next: (data) => {
         this.taxPersons = data;
+        this.applyFiltersAndSort();
         this.loading = false;
       },
       error: (error) => {
@@ -71,6 +82,94 @@ export class TaxPersonsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  // === Filtering & Sorting ===
+  applyFiltersAndSort(): void {
+    let result = [...this.taxPersons];
+
+    // Text filter
+    if (this.filterText) {
+      const searchLower = this.filterText.toLowerCase();
+      result = result.filter(person =>
+        person.name.toLowerCase().includes(searchLower) ||
+        (person.pesel && person.pesel.includes(this.filterText)) ||
+        (person.nip && person.nip.includes(this.filterText))
+      );
+    }
+
+    // Type filter
+    if (this.filterType !== 'ALL') {
+      result = result.filter(person => person.type === this.filterType);
+    }
+
+    // Active only filter
+    if (this.filterActiveOnly) {
+      result = result.filter(person => person.active);
+    }
+
+    // Sorting
+    result.sort((a, b) => {
+      let valueA: any;
+      let valueB: any;
+
+      switch (this.sortColumn) {
+        case 'name':
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+          break;
+        case 'type':
+          valueA = a.type;
+          valueB = b.type;
+          break;
+        case 'taxYear':
+          valueA = a.taxYear || 0;
+          valueB = b.taxYear || 0;
+          break;
+        case 'cumulativeGrossIncome':
+          valueA = a.cumulativeGrossIncome || 0;
+          valueB = b.cumulativeGrossIncome || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (valueA < valueB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valueA > valueB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    this.filteredTaxPersons = result;
+  }
+
+  onFilterChange(): void {
+    this.applyFiltersAndSort();
+  }
+
+  clearFilters(): void {
+    this.filterText = '';
+    this.filterType = 'ALL';
+    this.filterActiveOnly = false;
+    this.applyFiltersAndSort();
+  }
+
+  sort(column: 'name' | 'type' | 'taxYear' | 'cumulativeGrossIncome'): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applyFiltersAndSort();
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) return '';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
+
+  getActiveCount(): number {
+    return this.taxPersons.filter(p => p.active).length;
   }
 
   loadDropdownOptions(): void {

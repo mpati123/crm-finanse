@@ -26,6 +26,7 @@ import {
 })
 export class IncomeSourcesComponent implements OnInit {
   incomeSources: IncomeSource[] = [];
+  filteredSources: IncomeSource[] = [];
   categories: Category[] = [];
   taxPersons: any[] = [];
   incomeTypes: EnumOption[] = [];
@@ -41,6 +42,15 @@ export class IncomeSourcesComponent implements OnInit {
   simulationYear: number = new Date().getFullYear();
   years: number[] = this.generateYearsArray();
   showComparisonView = false;
+
+  // Filtering
+  filterText = '';
+  filterIncomeType: string | null = null;
+  filterActiveOnly = false;
+
+  // Sorting
+  sortColumn: 'name' | 'amount' | 'incomeType' | 'netAmount' = 'name';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   newSource: IncomeSource = this.getEmptySource();
 
@@ -103,6 +113,7 @@ export class IncomeSourcesComponent implements OnInit {
     this.apiService.getAllIncomeSources().subscribe({
       next: (data) => {
         this.incomeSources = data;
+        this.applyFiltersAndSort();
         this.loading = false;
       },
       error: (err) => {
@@ -139,6 +150,87 @@ export class IncomeSourcesComponent implements OnInit {
       next: (data) => this.zusTypes = data,
       error: (err) => console.error('Error loading ZUS types:', err)
     });
+  }
+
+  // === Filtering ===
+  applyFiltersAndSort(): void {
+    let result = [...this.incomeSources];
+
+    if (this.filterText) {
+      const searchLower = this.filterText.toLowerCase();
+      result = result.filter(source =>
+        source.name.toLowerCase().includes(searchLower) ||
+        (source.personName && source.personName.toLowerCase().includes(searchLower)) ||
+        (source.taxPersonName && source.taxPersonName.toLowerCase().includes(searchLower))
+      );
+    }
+
+    if (this.filterIncomeType) {
+      result = result.filter(source => source.incomeType === this.filterIncomeType);
+    }
+
+    if (this.filterActiveOnly) {
+      result = result.filter(source => source.active);
+    }
+
+    result.sort((a, b) => {
+      let valueA: any;
+      let valueB: any;
+
+      switch (this.sortColumn) {
+        case 'name':
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+          break;
+        case 'amount':
+          valueA = a.amount;
+          valueB = b.amount;
+          break;
+        case 'incomeType':
+          valueA = a.incomeType.toLowerCase();
+          valueB = b.incomeType.toLowerCase();
+          break;
+        case 'netAmount':
+          valueA = a.netAmount || a.amount;
+          valueB = b.netAmount || b.amount;
+          break;
+        default:
+          return 0;
+      }
+
+      if (valueA < valueB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valueA > valueB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    this.filteredSources = result;
+  }
+
+  onFilterChange(): void {
+    this.applyFiltersAndSort();
+  }
+
+  clearFilters(): void {
+    this.filterText = '';
+    this.filterIncomeType = null;
+    this.filterActiveOnly = false;
+    this.applyFiltersAndSort();
+  }
+
+  // === Sorting ===
+  sort(column: 'name' | 'amount' | 'incomeType' | 'netAmount'): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applyFiltersAndSort();
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) return '';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
   }
 
   onIncomeTypeChange(): void {
@@ -181,7 +273,6 @@ export class IncomeSourcesComponent implements OnInit {
   }
 
   saveSource(): void {
-    // Dla stawki godzinowej automatycznie oblicz kwotę
     if (this.isHourlyRate() && this.newSource.hourlyRate && this.newSource.defaultHoursPerMonth) {
       this.newSource.amount = this.getCalculatedMonthlyAmount();
     }
@@ -232,7 +323,6 @@ export class IncomeSourcesComponent implements OnInit {
   }
 
   getTotalGross(): number {
-    // Suma brutto z VAT (dla B2B vatPayer uzywa grossAmount, dla reszty amount)
     return this.incomeSources
       .filter(s => s.active)
       .reduce((sum, s) => {
@@ -244,28 +334,23 @@ export class IncomeSourcesComponent implements OnInit {
   }
 
   getTotalNet(): number {
-    // Suma netto fakturowego - kwota wprowadzona (amount)
     return this.incomeSources
       .filter(s => s.active)
       .reduce((sum, s) => sum + s.amount, 0);
   }
 
   getTotalOnHand(): number {
-    // Suma "na reke" - po odliczeniu wszystkich skladek i podatkow
     return this.incomeSources
       .filter(s => s.active)
       .reduce((sum, s) => {
-        // Dla SWIADCZENIE/CZYNSZ/INNE - kwota bez odliczen
         if (s.amountType === 'FIXED' || s.incomeType === 'SWIADCZENIE' || s.incomeType === 'CZYNSZ' || s.incomeType === 'INNE') {
           return sum + s.amount;
         }
-        // Dla pozostalych - netAmount (kwota po odliczeniach ZUS, zdrowotnej, podatku)
         return sum + (s.netAmount || s.amount);
       }, 0);
   }
 
   onIncomeTypeChangeForAmountType(): void {
-    // Dla swiadczen automatycznie ustawiamy FIXED
     if (this.newSource.incomeType === 'SWIADCZENIE') {
       this.newSource.amountType = 'FIXED';
     }
@@ -340,11 +425,9 @@ export class IncomeSourcesComponent implements OnInit {
     if (source.amountType === 'FIXED') {
       return this.translate.instant('COMMON.AMOUNT');
     }
-    // Dla B2B z VAT - pokazujemy "Netto fakturowe"
     if (source.incomeType === 'B2B' && source.b2bConfig?.vatPayer) {
       return this.translate.instant('INCOME_SOURCES.NET_INVOICE');
     }
-    // Dla pozostałych
     return source.amountType === 'NET'
       ? this.translate.instant('AMOUNT_TYPES.NET')
       : this.translate.instant('AMOUNT_TYPES.GROSS');
@@ -365,7 +448,6 @@ export class IncomeSourcesComponent implements OnInit {
   }
 
   loadYearlySimulation(sourceId: number, year: number): void {
-    // Load both yearly simulation and tax scenarios
     this.apiService.getYearlySimulation(sourceId, year).subscribe({
       next: (data) => {
         this.yearlySimulationData = data;
@@ -442,12 +524,10 @@ export class IncomeSourcesComponent implements OnInit {
   getScenarioName(scenarioKey: string): string {
     const translationKey = `TAX_SCENARIOS.${scenarioKey}`;
     const translated = this.translate.instant(translationKey);
-    // Fallback to the key itself if translation not found
     return translated !== translationKey ? translated : scenarioKey;
   }
 
   getIKZELimit(year: number): number {
-    // IKZE limit w 2026: 9388,20 PLN
     const limits: {[key: number]: number} = {
       2024: 9388.20,
       2025: 9388.20,
@@ -457,7 +537,6 @@ export class IncomeSourcesComponent implements OnInit {
   }
 
   getIKELimit(year: number): number {
-    // IKE limit w 2026: 23 472 PLN
     const limits: {[key: number]: number} = {
       2024: 23472,
       2025: 23472,
@@ -467,9 +546,6 @@ export class IncomeSourcesComponent implements OnInit {
   }
 
   getIKZETaxBenefit(): number {
-    // Oszczędność podatkowa przy IKZE (skala 12% lub 32%)
-    const yearlyTotal = this.getYearlyTotal();
-    // Załóżmy 12% dla uproszczenia, w rzeczywistości zależy od progu podatkowego
     return this.getIKZELimit(this.simulationYear) * 0.12;
   }
 

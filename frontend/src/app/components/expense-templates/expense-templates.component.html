@@ -7,10 +7,42 @@
     </div>
   </header>
 
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <input type="text" [(ngModel)]="filterText" (ngModelChange)="onFilterChange()"
+             placeholder="Szukaj..." class="filter-input">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterCategory" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">-- Wszystkie kategorie --</option>
+        <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterFrequency" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">-- Wszystkie częstotliwości --</option>
+        <option *ngFor="let freq of frequencies" [ngValue]="freq.value">{{ freq.label }}</option>
+      </select>
+    </div>
+    <div class="filter-group checkbox">
+      <label>
+        <input type="checkbox" [(ngModel)]="filterActiveOnly" (ngModelChange)="onFilterChange()">
+        Tylko aktywne
+      </label>
+    </div>
+    <button *ngIf="filterText || filterCategory || filterFrequency || filterActiveOnly"
+            class="btn-clear" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
   <div class="summary-bar">
     <div class="summary-item">
       <span class="label">{{ 'EXPENSE_TEMPLATES.ACTIVE_TEMPLATES' | translate }}:</span>
       <span class="value">{{ getActiveCount() }} / {{ templates.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Wyświetlanych:</span>
+      <span class="value">{{ filteredTemplates.length }}</span>
     </div>
     <div class="summary-item">
       <span class="label">{{ 'EXPENSE_TEMPLATES.TOTAL_MONTHLY' | translate }}:</span>
@@ -28,22 +60,37 @@
     <button class="btn-primary" (click)="openForm()">{{ 'EXPENSE_TEMPLATES.ADD_FIRST' | translate }}</button>
   </div>
 
-  <div *ngIf="!loading && templates.length > 0" class="templates-table">
+  <div *ngIf="!loading && filteredTemplates.length === 0 && templates.length > 0" class="empty-state">
+    <p>Brak wyników dla wybranych filtrów</p>
+    <button class="btn-secondary" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
+  <div *ngIf="!loading && filteredTemplates.length > 0" class="templates-table">
     <table>
       <thead>
         <tr>
-          <th>{{ 'COMMON.NAME' | translate }}</th>
-          <th>{{ 'COMMON.CATEGORY' | translate }}</th>
-          <th>{{ 'COMMON.AMOUNT' | translate }}</th>
-          <th>{{ 'EXPENSE_TEMPLATES.FREQUENCY' | translate }}</th>
-          <th>{{ 'EXPENSE_TEMPLATES.DAY_OF_MONTH' | translate }}</th>
+          <th class="sortable" (click)="sort('name')">
+            {{ 'COMMON.NAME' | translate }} {{ getSortIcon('name') }}
+          </th>
+          <th class="sortable" (click)="sort('categoryName')">
+            {{ 'COMMON.CATEGORY' | translate }} {{ getSortIcon('categoryName') }}
+          </th>
+          <th class="sortable" (click)="sort('amount')">
+            {{ 'COMMON.AMOUNT' | translate }} {{ getSortIcon('amount') }}
+          </th>
+          <th class="sortable" (click)="sort('frequency')">
+            {{ 'EXPENSE_TEMPLATES.FREQUENCY' | translate }} {{ getSortIcon('frequency') }}
+          </th>
+          <th class="sortable" (click)="sort('dayOfMonth')">
+            {{ 'EXPENSE_TEMPLATES.DAY_OF_MONTH' | translate }} {{ getSortIcon('dayOfMonth') }}
+          </th>
           <th>{{ 'COMMON.ACTIVE' | translate }}</th>
           <th>{{ 'EXPENSE_TEMPLATES.AUTO_PAY' | translate }}</th>
           <th>{{ 'COMMON.ACTIONS' | translate }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let template of templates" [class.inactive]="!template.active">
+        <tr *ngFor="let template of paginatedTemplates" [class.inactive]="!template.active">
           <td class="name-cell">
             <span class="name">{{ template.name }}</span>
             <span *ngIf="template.notes" class="has-notes" title="{{ template.notes }}">i</span>
@@ -73,6 +120,29 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <div class="pagination-info">
+        Strona {{ currentPage }} z {{ totalPages }} ({{ filteredTemplates.length }} rekordów)
+      </div>
+      <div class="pagination-controls">
+        <button class="btn-page" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
+        <button class="btn-page" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+        <button *ngFor="let page of pageNumbers"
+                class="btn-page"
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)">{{ page }}</button>
+        <button class="btn-page" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">›</button>
+        <button class="btn-page" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">»</button>
+      </div>
+      <div class="page-size-selector">
+        <label>Na stronie:</label>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+      </div>
+    </div>
   </div>
 
   <!-- Modal Form -->

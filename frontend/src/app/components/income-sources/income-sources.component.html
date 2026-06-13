@@ -7,10 +7,48 @@
     </div>
   </header>
 
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <input type="text" [(ngModel)]="filterText" (ngModelChange)="onFilterChange()"
+             placeholder="Szukaj..." class="filter-input">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterIncomeType" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">-- Wszystkie typy --</option>
+        <option *ngFor="let type of incomeTypes" [ngValue]="type.value">{{ type.label }}</option>
+      </select>
+    </div>
+    <div class="filter-group checkbox">
+      <label>
+        <input type="checkbox" [(ngModel)]="filterActiveOnly" (ngModelChange)="onFilterChange()">
+        Tylko aktywne
+      </label>
+    </div>
+    <div class="filter-group sort-group">
+      <label>Sortuj:</label>
+      <select [(ngModel)]="sortColumn" (ngModelChange)="onFilterChange()">
+        <option value="name">Nazwa</option>
+        <option value="amount">Kwota</option>
+        <option value="incomeType">Typ</option>
+        <option value="netAmount">Na rękę</option>
+      </select>
+      <button class="btn-sort" (click)="sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'; onFilterChange()">
+        {{ sortDirection === 'asc' ? '↑' : '↓' }}
+      </button>
+    </div>
+    <button *ngIf="filterText || filterIncomeType || filterActiveOnly"
+            class="btn-clear" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
   <div class="summary-bar">
     <div class="summary-item">
       <span class="label">{{ 'INCOME_SOURCES.ACTIVE_SOURCES' | translate }}:</span>
       <span class="value">{{ getActiveCount() }} / {{ incomeSources.length }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="label">Wyświetlanych:</span>
+      <span class="value">{{ filteredSources.length }}</span>
     </div>
     <div class="summary-item">
       <span class="label">{{ 'INCOME_SOURCES.TOTAL_GROSS' | translate }}:</span>
@@ -36,8 +74,13 @@
     <button class="btn-primary" (click)="openForm()">{{ 'INCOME_SOURCES.ADD_FIRST' | translate }}</button>
   </div>
 
-  <div *ngIf="!loading && incomeSources.length > 0" class="sources-grid">
-    <div *ngFor="let source of incomeSources" class="source-card" [class.inactive]="!source.active">
+  <div *ngIf="!loading && filteredSources.length === 0 && incomeSources.length > 0" class="empty-state">
+    <p>Brak wyników dla wybranych filtrów</p>
+    <button class="btn-secondary" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
+  <div *ngIf="!loading && filteredSources.length > 0" class="sources-grid">
+    <div *ngFor="let source of filteredSources" class="source-card" [class.inactive]="!source.active">
       <div class="card-header">
         <div class="source-info">
           <h3>{{ source.name }}</h3>
