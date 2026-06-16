@@ -2,13 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../services/api.service';
 import { SavingsGoal, GOAL_PRIORITY_OPTIONS, GOAL_STATUS_OPTIONS, GOAL_ICONS, GoalPriority, GoalStatus } from '../../models/savings-goal.model';
 
 @Component({
   selector: 'app-savings-goals',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, DragDropModule],
   templateUrl: './savings-goals.component.html',
   styleUrl: './savings-goals.component.scss'
 })
@@ -318,5 +319,31 @@ export class SavingsGoalsComponent implements OnInit {
     if (percentage >= 75) return '#3b82f6';
     if (percentage >= 50) return '#f59e0b';
     return '#ef4444';
+  }
+
+  // Drag & Drop
+  drop(event: CdkDragDrop<SavingsGoal[]>): void {
+    if (event.previousIndex !== event.currentIndex) {
+      moveItemInArray(this.filteredGoals, event.previousIndex, event.currentIndex);
+
+      const orderedIds = this.filteredGoals
+        .filter(g => g.id !== undefined)
+        .map(g => g.id as number);
+
+      this.apiService.reorderSavingsGoals(orderedIds).subscribe({
+        next: (updatedGoals) => {
+          this.goals = updatedGoals;
+          this.filteredGoals = [...updatedGoals];
+        },
+        error: (err) => {
+          console.error('Error reordering goals:', err);
+          this.loadGoals();
+        }
+      });
+    }
+  }
+
+  isDragDisabled(): boolean {
+    return !!(this.filterText || this.filterStatus || this.filterPriority);
   }
 }

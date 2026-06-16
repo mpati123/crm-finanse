@@ -12,7 +12,7 @@ import { SavingsGoal } from '../models/savings-goal.model';
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:8081/api';
+  private baseUrl = '/api';
 
   constructor(private http: HttpClient) {}
 
@@ -304,5 +304,9 @@ export class ApiService {
 
   withdrawFromSavings(id: number, amount: number): Observable<SavingsGoal> {
     return this.http.post<SavingsGoal>(`${this.baseUrl}/savings-goals/${id}/withdraw`, { amount });
+  }
+
+  reorderSavingsGoals(orderedIds: number[]): Observable<SavingsGoal[]> {
+    return this.http.put<SavingsGoal[]>(`${this.baseUrl}/savings-goals/reorder`, orderedIds);
   }
 }

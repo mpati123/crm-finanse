@@ -2,6 +2,12 @@ databaseChangeLog:
   - changeSet:
       id: 024-add-tax-person-to-income-sources
       author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: income_sources
+                columnName: tax_person_id
       changes:
         - addColumn:
             tableName: income_sources

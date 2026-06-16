@@ -70,10 +70,17 @@
     <button class="btn-primary" (click)="openForm()">Dodaj pierwszy cel</button>
   </div>
 
-  <div *ngIf="!loading && filteredGoals.length > 0" class="goals-grid">
+  <div *ngIf="!loading && filteredGoals.length > 0" class="goals-grid"
+       cdkDropList
+       [cdkDropListData]="filteredGoals"
+       (cdkDropListDropped)="drop($event)">
     <div *ngFor="let goal of filteredGoals" class="goal-card" [class]="getStatusClass(goal.status)"
-         [style.border-color]="goal.color">
+         [style.border-color]="goal.color"
+         cdkDrag
+         [cdkDragDisabled]="isDragDisabled()">
+      <div class="cdk-drag-placeholder" *cdkDragPlaceholder></div>
       <div class="goal-header">
+        <div class="drag-handle" cdkDragHandle *ngIf="!isDragDisabled()">⋮⋮</div>
         <div class="goal-icon" [style.background]="goal.color">
           {{ getIconEmoji(goal.icon) }}
         </div>

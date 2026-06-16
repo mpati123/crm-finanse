@@ -66,4 +66,9 @@ public class SavingsGoalController {
         BigDecimal amount = body.get("amount");
         return ResponseEntity.ok(service.withdrawAmount(id, amount));
     }
+
+    @PutMapping("/reorder")
+    public ResponseEntity<List<SavingsGoalDTO>> reorder(@RequestBody List<Long> orderedIds) {
+        return ResponseEntity.ok(service.reorder(orderedIds));
+    }
 }

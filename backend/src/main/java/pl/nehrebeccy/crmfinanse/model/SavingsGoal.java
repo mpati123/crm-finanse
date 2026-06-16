@@ -48,6 +48,9 @@ public class SavingsGoal {
 
     private String color;
 
+    @Column(name = "display_order")
+    private Integer displayOrder = 0;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

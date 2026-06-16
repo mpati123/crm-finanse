@@ -53,3 +53,5 @@ databaseChangeLog:
       file: db/changelog/026-create-savings-goals.yaml
   - include:
       file: db/changelog/027-add-planned-purchase-id-to-expenses.yaml
+  - include:
+      file: db/changelog/028-add-display-order-to-savings-goals.yaml

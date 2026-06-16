@@ -2,16 +2,56 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
-    container_name: crm-postgres
+    image: postgres:16-alpine
+    container_name: crm-finanse-db
     environment:
       POSTGRES_DB: crm_finanse
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
+      POSTGRES_USER: crm_finanse
+      POSTGRES_PASSWORD: crm_finanse_secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crm-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U crm_finanse -d crm_finanse"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm-finanse-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/crm_finanse
+      SPRING_DATASOURCE_USERNAME: crm_finanse
+      SPRING_DATASOURCE_PASSWORD: crm_finanse_secret
+    networks:
+      - crm-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crm-finanse-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8082:80"
+    networks:
+      - crm-network
+    restart: unless-stopped
+
+networks:
+  crm-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

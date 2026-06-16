@@ -613,3 +613,46 @@
     background: #dc2626;
   }
 }
+
+// Drag & Drop Styles
+.drag-handle {
+  cursor: grab;
+  color: #9ca3af;
+  font-size: 16px;
+  padding: 4px 8px;
+  margin-right: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  user-select: none;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.goal-card.cdk-drag-preview {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transform: rotate(2deg);
+  opacity: 0.95;
+}
+
+.goal-card.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.goals-grid.cdk-drop-list-dragging .goal-card:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drag-placeholder {
+  background: #e5e7eb;
+  border: 2px dashed #9ca3af;
+  border-radius: 12px;
+  min-height: 200px;
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}

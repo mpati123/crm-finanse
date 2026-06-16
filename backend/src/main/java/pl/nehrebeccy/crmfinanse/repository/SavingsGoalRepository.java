@@ -16,4 +16,6 @@ public interface SavingsGoalRepository extends JpaRepository<SavingsGoal, Long> 
     List<SavingsGoal> findByStatusOrderByPriorityDescTargetDateAsc(SavingsGoal.GoalStatus status);
 
     List<SavingsGoal> findAllByOrderByPriorityDescTargetDateAsc();
+
+    List<SavingsGoal> findAllByOrderByDisplayOrderAsc();
 }

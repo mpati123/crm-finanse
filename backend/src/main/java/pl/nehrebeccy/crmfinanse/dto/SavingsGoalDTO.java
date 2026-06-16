@@ -26,6 +26,7 @@ public class SavingsGoalDTO {
     private SavingsGoal.GoalStatus status;
     private String icon;
     private String color;
+    private Integer displayOrder;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

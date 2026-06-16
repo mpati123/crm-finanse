@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 028-add-display-order-to-savings-goals
+      author: claude
+      changes:
+        - addColumn:
+            tableName: savings_goals
+            columns:
+              - column:
+                  name: display_order
+                  type: INT
+                  defaultValueNumeric: 0
+        - sql:
+            sql: >
+              UPDATE savings_goals SET display_order = id WHERE display_order IS NULL OR display_order = 0

@@ -21,7 +21,7 @@ public class SavingsGoalService {
     private final SavingsGoalRepository repository;
 
     public List<SavingsGoalDTO> getAll() {
-        return repository.findAllByOrderByPriorityDescTargetDateAsc().stream()
+        return repository.findAllByOrderByDisplayOrderAsc().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -90,6 +90,19 @@ public class SavingsGoalService {
     }
 
     @Transactional
+    public List<SavingsGoalDTO> reorder(List<Long> orderedIds) {
+        for (int i = 0; i < orderedIds.size(); i++) {
+            Long id = orderedIds.get(i);
+            SavingsGoal goal = repository.findById(id).orElse(null);
+            if (goal != null) {
+                goal.setDisplayOrder(i);
+                repository.save(goal);
+            }
+        }
+        return getAll();
+    }
+
+    @Transactional
     public SavingsGoalDTO withdrawAmount(Long id, BigDecimal amount) {
         SavingsGoal goal = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Savings goal not found: " + id));
@@ -146,6 +159,7 @@ public class SavingsGoalService {
                 .status(goal.getStatus())
                 .icon(goal.getIcon())
                 .color(goal.getColor())
+                .displayOrder(goal.getDisplayOrder())
                 .createdAt(goal.getCreatedAt())
                 .updatedAt(goal.getUpdatedAt())
                 .remainingAmount(remaining)

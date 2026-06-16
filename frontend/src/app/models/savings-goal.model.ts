@@ -10,6 +10,7 @@ export interface SavingsGoal {
   status: GoalStatus;
   icon?: string;
   color?: string;
+  displayOrder?: number;
   createdAt?: string;
   updatedAt?: string;
 
