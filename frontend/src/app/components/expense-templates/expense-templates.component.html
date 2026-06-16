@@ -122,11 +122,11 @@
     </table>
 
     <!-- Pagination -->
-    <div class="pagination" *ngIf="totalPages > 1">
+    <div class="pagination">
       <div class="pagination-info">
-        Strona {{ currentPage }} z {{ totalPages }} ({{ filteredTemplates.length }} rekordów)
+        Strona {{ currentPage }} z {{ totalPages || 1 }} ({{ filteredTemplates.length }} rekordów)
       </div>
-      <div class="pagination-controls">
+      <div class="pagination-controls" *ngIf="totalPages > 1">
         <button class="btn-page" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
         <button class="btn-page" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
         <button *ngFor="let page of pageNumbers"

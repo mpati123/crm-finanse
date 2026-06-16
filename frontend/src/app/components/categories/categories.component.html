@@ -63,10 +63,10 @@
     <div class="category-section">
       <h2>{{ 'CATEGORIES.EXPENSE_CATEGORIES' | translate }}</h2>
       <div class="category-list">
-        <div *ngIf="getExpenseCategories().length === 0" class="empty">
+        <div *ngIf="paginatedExpenseCategories.length === 0" class="empty">
           {{ 'CATEGORIES.NO_EXPENSE_CATEGORIES' | translate }}
         </div>
-        <div *ngFor="let cat of getExpenseCategories()" class="category-card">
+        <div *ngFor="let cat of paginatedExpenseCategories" class="category-card">
           <div class="category-color" [style.background]="cat.color || '#6b7280'"></div>
           <div class="category-info">
             <span class="category-name">{{ cat.name }}</span>
@@ -83,10 +83,10 @@
     <div class="category-section">
       <h2>{{ 'CATEGORIES.INCOME_CATEGORIES' | translate }}</h2>
       <div class="category-list">
-        <div *ngIf="getIncomeCategories().length === 0" class="empty">
+        <div *ngIf="paginatedIncomeCategories.length === 0" class="empty">
           {{ 'CATEGORIES.NO_INCOME_CATEGORIES' | translate }}
         </div>
-        <div *ngFor="let cat of getIncomeCategories()" class="category-card">
+        <div *ngFor="let cat of paginatedIncomeCategories" class="category-card">
           <div class="category-color" [style.background]="cat.color || '#6b7280'"></div>
           <div class="category-info">
             <span class="category-name">{{ cat.name }}</span>
@@ -98,6 +98,27 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="!loading && filteredCategories.length > 0">
+    <div class="pagination-info">
+      Strona {{ currentPage }} z {{ totalPages || 1 }} ({{ filteredCategories.length }} kategorii)
+    </div>
+    <div class="pagination-controls" *ngIf="totalPages > 1">
+      <button class="btn-page" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
+      <button class="btn-page" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+      <button *ngFor="let page of pageNumbers" class="btn-page" [class.active]="page === currentPage"
+              (click)="goToPage(page)">{{ page }}</button>
+      <button class="btn-page" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">›</button>
+      <button class="btn-page" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">»</button>
+    </div>
+    <div class="page-size-selector">
+      <label>Na stronie:</label>
+      <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+      </select>
     </div>
   </div>
 

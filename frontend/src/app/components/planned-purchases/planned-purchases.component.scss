@@ -1,4 +1,4 @@
-.expenses-page {
+.planned-purchases-page {
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
@@ -41,7 +41,7 @@
 
 .btn-primary {
   padding: 10px 20px;
-  background: #3b82f6;
+  background: #8b5cf6;
   color: white;
   border: none;
   border-radius: 8px;
@@ -51,7 +51,7 @@
   transition: background 0.2s;
 
   &:hover {
-    background: #2563eb;
+    background: #7c3aed;
   }
 }
 
@@ -84,7 +84,7 @@
   .filter-group {
     flex: 1;
     min-width: 150px;
-    max-width: 250px;
+    max-width: 200px;
 
     input, select {
       width: 100%;
@@ -96,8 +96,8 @@
 
       &:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
       }
     }
   }
@@ -141,11 +141,14 @@
       font-weight: 600;
       font-size: 16px;
       color: #1f2937;
+    }
 
-      &.total {
-        color: #dc2626;
-        font-size: 18px;
-      }
+    &.planned .value {
+      color: #8b5cf6;
+    }
+
+    &.purchased .value {
+      color: #059669;
     }
   }
 }
@@ -160,7 +163,7 @@
     width: 40px;
     height: 40px;
     border: 3px solid #e5e7eb;
-    border-top-color: #3b82f6;
+    border-top-color: #8b5cf6;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 16px;
@@ -176,7 +179,7 @@
   to { transform: rotate(360deg); }
 }
 
-.expenses-table {
+.purchases-table {
   background: white;
   border-radius: 12px;
   overflow: hidden;
@@ -219,84 +222,39 @@
     tr:hover td {
       background: #f9fafb;
     }
+
+    tr.status-purchased td {
+      background: #f0fdf4;
+    }
+
+    tr.status-cancelled td {
+      opacity: 0.6;
+      text-decoration: line-through;
+    }
+
+    tr.status-postponed td {
+      background: #fefce8;
+    }
   }
 }
 
 .name-cell {
   .name {
     font-weight: 500;
+    display: block;
   }
 
-  .recurring-badge {
-    margin-left: 8px;
-    padding: 2px 8px;
-    background: #dbeafe;
-    color: #1d4ed8;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-  }
-
-  .planned-badge {
-    margin-left: 8px;
-    padding: 2px 8px;
-    background: #e9d5ff;
-    color: #7c3aed;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-  }
-}
-
-// Planned purchase row highlighting
-tr.planned-purchase {
-  background: linear-gradient(90deg, #faf5ff 0%, #f5f3ff 50%, #faf5ff 100%) !important;
-
-  td {
-    border-left: 3px solid #8b5cf6;
-  }
-
-  td:first-child {
-    border-left-width: 4px;
-  }
-
-  &:hover td {
-    background: #f3e8ff !important;
+  .description {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
   }
 }
 
 .amount-cell {
   font-weight: 600;
-  color: #dc2626 !important;
-}
-
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: transform 0.1s;
-
-  &:hover {
-    transform: scale(1.05);
-  }
-
-  &.paid {
-    background: #d1fae5;
-    color: #065f46;
-  }
-
-  &.pending {
-    background: #fef3c7;
-    color: #92400e;
-  }
-
-  &.remaining {
-    background: #fee2e2;
-    color: #991b1b;
-  }
+  color: #7c3aed !important;
 }
 
 .actions-cell {
@@ -316,8 +274,63 @@ tr.planned-purchase {
     background: #f3f4f6;
   }
 
+  &.buy:hover {
+    background: #d1fae5;
+  }
+
   &.delete:hover {
     background: #fee2e2;
+  }
+}
+
+// Badges
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+
+  // Priority badges
+  &.priority-low {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  &.priority-medium {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &.priority-high {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  &.priority-urgent {
+    background: #dc2626;
+    color: white;
+  }
+
+  // Status badges
+  &.status-planned {
+    background: #ede9fe;
+    color: #6d28d9;
+  }
+
+  &.status-purchased {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  &.status-cancelled {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  &.status-postponed {
+    background: #fef3c7;
+    color: #92400e;
   }
 }
 
@@ -362,8 +375,8 @@ tr.planned-purchase {
       }
 
       &.active {
-        background: #3b82f6;
-        border-color: #3b82f6;
+        background: #8b5cf6;
+        border-color: #8b5cf6;
         color: white;
       }
     }
@@ -439,7 +452,7 @@ tr.planned-purchase {
   }
 }
 
-.expense-form {
+.purchase-form {
   padding: 24px;
 
   .form-group {
@@ -463,20 +476,18 @@ tr.planned-purchase {
 
       &:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
       }
     }
+  }
 
-    &.checkbox label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
+  .form-row {
+    display: flex;
+    gap: 16px;
 
-      input {
-        width: auto;
-      }
+    .form-group {
+      flex: 1;
     }
   }
 
@@ -487,37 +498,5 @@ tr.planned-purchase {
     margin-top: 24px;
     padding-top: 20px;
     border-top: 1px solid #e5e7eb;
-  }
-}
-
-@media (max-width: 768px) {
-  .expenses-page {
-    padding: 16px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .header-actions {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .date-selector {
-    width: 100%;
-
-    select {
-      flex: 1;
-    }
-  }
-
-  .btn-primary {
-    width: 100%;
-  }
-
-  .expenses-table {
-    overflow-x: auto;
   }
 }

@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 027-add-planned-purchase-id-to-expenses
+      author: claude
+      changes:
+        - addColumn:
+            tableName: expenses
+            columns:
+              - column:
+                  name: planned_purchase_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_expense_planned_purchase
+                    references: planned_purchases(id)

@@ -1,0 +1,281 @@
+<div class="savings-goals-page">
+  <header class="page-header">
+    <h1>Cele oszczędnościowe</h1>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openForm()">+ Nowy cel</button>
+    </div>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="summary-card total-saved">
+      <div class="card-icon">💰</div>
+      <div class="card-content">
+        <span class="card-label">Zaoszczędzone</span>
+        <span class="card-value">{{ formatCurrency(getTotalSaved()) }}</span>
+      </div>
+    </div>
+    <div class="summary-card total-target">
+      <div class="card-icon">🎯</div>
+      <div class="card-content">
+        <span class="card-label">Cel aktywnych</span>
+        <span class="card-value">{{ formatCurrency(getTotalTarget()) }}</span>
+      </div>
+    </div>
+    <div class="summary-card active-goals">
+      <div class="card-icon">📈</div>
+      <div class="card-content">
+        <span class="card-label">Aktywne cele</span>
+        <span class="card-value">{{ getActiveGoalsCount() }}</span>
+      </div>
+    </div>
+    <div class="summary-card completed-goals">
+      <div class="card-icon">✅</div>
+      <div class="card-content">
+        <span class="card-label">Osiągnięte</span>
+        <span class="card-value">{{ getCompletedGoalsCount() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <input type="text" [(ngModel)]="filterText" (ngModelChange)="onFilterChange()"
+             placeholder="Szukaj..." class="filter-input">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterStatus" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">-- Wszystkie statusy --</option>
+        <option *ngFor="let status of statusOptions" [ngValue]="status.value">{{ status.label }}</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="filterPriority" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">-- Wszystkie priorytety --</option>
+        <option *ngFor="let priority of priorityOptions" [ngValue]="priority.value">{{ priority.label }}</option>
+      </select>
+    </div>
+    <button *ngIf="filterText || filterStatus || filterPriority"
+            class="btn-clear" (click)="clearFilters()">Wyczyść filtry</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ 'COMMON.LOADING' | translate }}</p>
+  </div>
+
+  <div *ngIf="!loading && filteredGoals.length === 0" class="empty-state">
+    <p>Brak celów oszczędnościowych</p>
+    <button class="btn-primary" (click)="openForm()">Dodaj pierwszy cel</button>
+  </div>
+
+  <div *ngIf="!loading && filteredGoals.length > 0" class="goals-grid">
+    <div *ngFor="let goal of filteredGoals" class="goal-card" [class]="getStatusClass(goal.status)"
+         [style.border-color]="goal.color">
+      <div class="goal-header">
+        <div class="goal-icon" [style.background]="goal.color">
+          {{ getIconEmoji(goal.icon) }}
+        </div>
+        <div class="goal-title">
+          <h3>{{ goal.name }}</h3>
+          <span class="badge" [class]="getPriorityClass(goal.priority)">
+            {{ getPriorityLabel(goal.priority) }}
+          </span>
+          <span class="badge" [class]="getStatusClass(goal.status)">
+            {{ getStatusLabel(goal.status) }}
+          </span>
+        </div>
+        <div class="goal-actions">
+          <button class="btn-icon" (click)="openForm(goal)" title="Edytuj">✏️</button>
+          <button class="btn-icon delete" (click)="deleteGoal(goal.id!)" title="Usuń">🗑️</button>
+        </div>
+      </div>
+
+      <p *ngIf="goal.description" class="goal-description">{{ goal.description }}</p>
+
+      <div class="goal-progress">
+        <div class="progress-bar-container">
+          <div class="progress-bar"
+               [style.width]="getProgressBarWidth(goal)"
+               [style.background]="getProgressColor(goal)">
+          </div>
+        </div>
+        <div class="progress-info">
+          <span class="current">{{ formatCurrency(goal.currentAmount) }}</span>
+          <span class="percentage">{{ (goal.percentageComplete || 0) | number:'1.0-0' }}%</span>
+          <span class="target">{{ formatCurrency(goal.targetAmount) }}</span>
+        </div>
+      </div>
+
+      <div class="goal-details">
+        <div class="detail-row" *ngIf="goal.targetDate">
+          <span class="detail-label">Data docelowa:</span>
+          <span class="detail-value">{{ formatDate(goal.targetDate) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="goal.monthlyContribution">
+          <span class="detail-label">Miesięczna wpłata:</span>
+          <span class="detail-value">{{ formatCurrency(goal.monthlyContribution) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="goal.remainingAmount && goal.remainingAmount > 0">
+          <span class="detail-label">Pozostało:</span>
+          <span class="detail-value remaining">{{ formatCurrency(goal.remainingAmount) }}</span>
+        </div>
+        <div class="detail-row" *ngIf="goal.monthsToGoal && goal.monthsToGoal > 0">
+          <span class="detail-label">Miesięcy do celu:</span>
+          <span class="detail-value">{{ goal.monthsToGoal }}</span>
+        </div>
+      </div>
+
+      <div class="goal-footer" *ngIf="goal.status === 'ACTIVE'">
+        <button class="btn-contribute" (click)="openContributionModal(goal)">
+          + Wpłać
+        </button>
+        <button class="btn-withdraw" (click)="openWithdrawModal(goal)" *ngIf="goal.currentAmount > 0">
+          - Wypłać
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Modal -->
+  <div *ngIf="showForm" class="modal-overlay" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingGoal ? 'Edytuj cel' : 'Nowy cel oszczędnościowy' }}</h2>
+        <button class="btn-close" (click)="closeForm()">×</button>
+      </div>
+      <form (ngSubmit)="saveGoal()" class="goal-form">
+        <div class="form-group">
+          <label for="name">Nazwa celu</label>
+          <input type="text" id="name" [(ngModel)]="newGoal.name" name="name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Opis</label>
+          <textarea id="description" [(ngModel)]="newGoal.description" name="description" rows="2"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="targetAmount">Kwota docelowa (PLN)</label>
+            <input type="number" id="targetAmount" [(ngModel)]="newGoal.targetAmount" name="targetAmount" step="0.01" required>
+          </div>
+
+          <div class="form-group">
+            <label for="currentAmount">Obecna kwota (PLN)</label>
+            <input type="number" id="currentAmount" [(ngModel)]="newGoal.currentAmount" name="currentAmount" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="targetDate">Data docelowa</label>
+            <input type="date" id="targetDate" [(ngModel)]="newGoal.targetDate" name="targetDate">
+          </div>
+
+          <div class="form-group">
+            <label for="monthlyContribution">Planowana miesięczna wpłata</label>
+            <input type="number" id="monthlyContribution" [(ngModel)]="newGoal.monthlyContribution" name="monthlyContribution" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="priority">Priorytet</label>
+            <select id="priority" [(ngModel)]="newGoal.priority" name="priority">
+              <option *ngFor="let p of priorityOptions" [ngValue]="p.value">{{ p.label }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" [(ngModel)]="newGoal.status" name="status">
+              <option *ngFor="let s of statusOptions" [ngValue]="s.value">{{ s.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ikona</label>
+          <div class="icon-selector">
+            <button type="button" *ngFor="let icon of iconOptions"
+                    class="icon-option"
+                    [class.selected]="newGoal.icon === icon.value"
+                    (click)="newGoal.icon = icon.value"
+                    [title]="icon.label">
+              {{ icon.emoji }}
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Kolor</label>
+          <div class="color-selector">
+            <button type="button" *ngFor="let color of colorOptions"
+                    class="color-option"
+                    [class.selected]="newGoal.color === color"
+                    [style.background]="color"
+                    (click)="newGoal.color = color">
+            </button>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeForm()">Anuluj</button>
+          <button type="submit" class="btn-primary">{{ editingGoal ? 'Zapisz' : 'Utwórz' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contribution Modal -->
+  <div *ngIf="showContributionModal" class="modal-overlay" (click)="closeContributionModal()">
+    <div class="modal modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Wpłać na cel: {{ selectedGoalForAction?.name }}</h2>
+        <button class="btn-close" (click)="closeContributionModal()">×</button>
+      </div>
+      <form (ngSubmit)="addContribution()" class="contribution-form">
+        <div class="form-group">
+          <label for="contributionAmount">Kwota wpłaty (PLN)</label>
+          <input type="number" id="contributionAmount" [(ngModel)]="contributionAmount"
+                 name="contributionAmount" step="0.01" min="0.01" required>
+        </div>
+        <div class="current-status">
+          <span>Obecny stan: {{ formatCurrency(selectedGoalForAction?.currentAmount || 0) }}</span>
+          <span>Cel: {{ formatCurrency(selectedGoalForAction?.targetAmount || 0) }}</span>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeContributionModal()">Anuluj</button>
+          <button type="submit" class="btn-primary">Wpłać</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Withdraw Modal -->
+  <div *ngIf="showWithdrawModal" class="modal-overlay" (click)="closeWithdrawModal()">
+    <div class="modal modal-small" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Wypłać z celu: {{ selectedGoalForAction?.name }}</h2>
+        <button class="btn-close" (click)="closeWithdrawModal()">×</button>
+      </div>
+      <form (ngSubmit)="withdrawFromGoal()" class="contribution-form">
+        <div class="form-group">
+          <label for="withdrawAmount">Kwota wypłaty (PLN)</label>
+          <input type="number" id="withdrawAmount" [(ngModel)]="withdrawAmount"
+                 name="withdrawAmount" step="0.01" min="0.01"
+                 [attr.max]="selectedGoalForAction?.currentAmount" required>
+        </div>
+        <div class="current-status">
+          <span>Dostępne: {{ formatCurrency(selectedGoalForAction?.currentAmount || 0) }}</span>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="closeWithdrawModal()">Anuluj</button>
+          <button type="submit" class="btn-withdraw-action">Wypłać</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

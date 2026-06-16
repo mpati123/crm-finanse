@@ -55,6 +55,9 @@ public class Expense {
     @Column(name = "expense_template_id")
     private Long expenseTemplateId;
 
+    @Column(name = "planned_purchase_id")
+    private Long plannedPurchaseId;
+
     public enum PaymentStatus {
         PAID,       // opłacone (t)
         PENDING,    // do zapłaty (n)

@@ -28,12 +28,12 @@ export class ExpensesComponent implements OnInit {
   filterStatus: string | null = null;
 
   // Sorting
-  sortColumn: 'name' | 'amount' | 'date' | 'categoryName' | 'status' = 'date';
-  sortDirection: 'asc' | 'desc' = 'desc';
+  sortColumn: 'name' | 'amount' | 'date' | 'categoryName' | 'status' = 'status';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Pagination
   currentPage = 1;
-  pageSize = 15;
+  pageSize = 25;
   pageSizeOptions = [10, 15, 25, 50];
 
   newExpense: Expense = {
@@ -135,6 +135,9 @@ export class ExpensesComponent implements OnInit {
       let valueA: any;
       let valueB: any;
 
+      // Custom order for status: PENDING first, then REMAINING, then PAID
+      const statusOrder: Record<string, number> = { 'PENDING': 1, 'REMAINING': 2, 'PAID': 3 };
+
       switch (this.sortColumn) {
         case 'name':
           valueA = a.name.toLowerCase();
@@ -153,16 +156,26 @@ export class ExpensesComponent implements OnInit {
           valueB = (b.categoryName || '').toLowerCase();
           break;
         case 'status':
-          valueA = a.status.toLowerCase();
-          valueB = b.status.toLowerCase();
+          valueA = statusOrder[a.status] || 99;
+          valueB = statusOrder[b.status] || 99;
           break;
         default:
           return 0;
       }
 
-      if (valueA < valueB) return this.sortDirection === 'asc' ? -1 : 1;
-      if (valueA > valueB) return this.sortDirection === 'asc' ? 1 : -1;
-      return 0;
+      let comparison = 0;
+      if (valueA < valueB) comparison = -1;
+      else if (valueA > valueB) comparison = 1;
+
+      // Apply sort direction
+      comparison = this.sortDirection === 'asc' ? comparison : -comparison;
+
+      // Secondary sort by name alphabetically when primary values are equal
+      if (comparison === 0) {
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+      }
+
+      return comparison;
     });
 
     this.filteredExpenses = result;

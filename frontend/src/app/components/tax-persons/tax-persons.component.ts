@@ -30,6 +30,11 @@ export class TaxPersonsComponent implements OnInit {
   sortColumn: 'name' | 'type' | 'taxYear' | 'cumulativeGrossIncome' = 'name';
   sortDirection: 'asc' | 'desc' = 'asc';
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 25;
+  pageSizeOptions = [10, 15, 25, 50];
+
   // Options for dropdowns
   taxPersonTypes: { value: TaxPersonType; label: string }[] = [
     { value: 'INDIVIDUAL', label: 'INDIVIDUAL' },
@@ -143,6 +148,7 @@ export class TaxPersonsComponent implements OnInit {
   }
 
   onFilterChange(): void {
+    this.currentPage = 1;
     this.applyFiltersAndSort();
   }
 
@@ -150,6 +156,45 @@ export class TaxPersonsComponent implements OnInit {
     this.filterText = '';
     this.filterType = 'ALL';
     this.filterActiveOnly = false;
+    this.currentPage = 1;
+    this.applyFiltersAndSort();
+  }
+
+  // === Pagination ===
+  get paginatedTaxPersons(): TaxPerson[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.filteredTaxPersons.slice(start, end);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredTaxPersons.length / this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
+
+    if (end - start + 1 < maxVisiblePages) {
+      start = Math.max(1, end - maxVisiblePages + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
     this.applyFiltersAndSort();
   }
 

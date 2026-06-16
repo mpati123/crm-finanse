@@ -7,6 +7,8 @@ import { BudgetComponent } from './components/budget/budget.component';
 import { IncomeSourcesComponent } from './components/income-sources/income-sources.component';
 import { ExpenseTemplatesComponent } from './components/expense-templates/expense-templates.component';
 import { TaxPersonsComponent } from './components/tax-persons/tax-persons.component';
+import { PlannedPurchasesComponent } from './components/planned-purchases/planned-purchases.component';
+import { SavingsGoalsComponent } from './components/savings-goals/savings-goals.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
@@ -15,6 +17,8 @@ export const routes: Routes = [
   { path: 'incomes', component: IncomesComponent },
   { path: 'categories', component: CategoriesComponent },
   { path: 'budget', component: BudgetComponent },
+  { path: 'planned-purchases', component: PlannedPurchasesComponent },
+  { path: 'savings-goals', component: SavingsGoalsComponent },
   { path: 'income-sources', component: IncomeSourcesComponent },
   { path: 'expense-templates', component: ExpenseTemplatesComponent },
   { path: 'tax-persons', component: TaxPersonsComponent },

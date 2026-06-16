@@ -73,7 +73,7 @@
   </div>
 
   <div class="tax-persons-list" *ngIf="!loading && filteredTaxPersons.length > 0">
-    <div class="tax-person-card" *ngFor="let person of filteredTaxPersons" [class.inactive]="!person.active">
+    <div class="tax-person-card" *ngFor="let person of paginatedTaxPersons" [class.inactive]="!person.active">
       <div class="card-header">
         <h3>{{ person.name }}</h3>
         <div class="actions">
@@ -178,6 +178,27 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="!loading && filteredTaxPersons.length > 0">
+    <div class="pagination-info">
+      Strona {{ currentPage }} z {{ totalPages || 1 }} ({{ filteredTaxPersons.length }} osób)
+    </div>
+    <div class="pagination-controls" *ngIf="totalPages > 1">
+      <button class="btn-page" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
+      <button class="btn-page" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+      <button *ngFor="let page of pageNumbers" class="btn-page" [class.active]="page === currentPage"
+              (click)="goToPage(page)">{{ page }}</button>
+      <button class="btn-page" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">›</button>
+      <button class="btn-page" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">»</button>
+    </div>
+    <div class="page-size-selector">
+      <label>Na stronie:</label>
+      <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+        <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+      </select>
     </div>
   </div>
 

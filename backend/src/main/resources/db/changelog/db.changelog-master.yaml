@@ -47,3 +47,9 @@ databaseChangeLog:
       file: db/changelog/023-add-tax-person-to-incomes.yaml
   - include:
       file: db/changelog/024-add-tax-person-to-income-sources.yaml
+  - include:
+      file: db/changelog/025-create-planned-purchases.yaml
+  - include:
+      file: db/changelog/026-create-savings-goals.yaml
+  - include:
+      file: db/changelog/027-add-planned-purchase-id-to-expenses.yaml

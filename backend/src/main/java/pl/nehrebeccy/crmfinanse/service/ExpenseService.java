@@ -6,8 +6,10 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.nehrebeccy.crmfinanse.dto.ExpenseDTO;
 import pl.nehrebeccy.crmfinanse.model.Category;
 import pl.nehrebeccy.crmfinanse.model.Expense;
+import pl.nehrebeccy.crmfinanse.model.PlannedPurchase;
 import pl.nehrebeccy.crmfinanse.repository.CategoryRepository;
 import pl.nehrebeccy.crmfinanse.repository.ExpenseRepository;
+import pl.nehrebeccy.crmfinanse.repository.PlannedPurchaseRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,6 +23,7 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final CategoryRepository categoryRepository;
+    private final PlannedPurchaseRepository plannedPurchaseRepository;
 
     public List<ExpenseDTO> getAllExpenses() {
         return expenseRepository.findAll().stream()
@@ -76,6 +79,15 @@ public class ExpenseService {
     }
 
     public void deleteExpense(Long id) {
+        // First, unlink from PlannedPurchase if linked
+        Expense expense = expenseRepository.findById(id).orElse(null);
+        if (expense != null && expense.getPlannedPurchaseId() != null) {
+            PlannedPurchase purchase = plannedPurchaseRepository.findById(expense.getPlannedPurchaseId()).orElse(null);
+            if (purchase != null && purchase.getExpenseId() != null && purchase.getExpenseId().equals(id)) {
+                purchase.setExpenseId(null);
+                plannedPurchaseRepository.save(purchase);
+            }
+        }
         expenseRepository.deleteById(id);
     }
 
@@ -98,6 +110,7 @@ public class ExpenseService {
                 .notes(expense.getNotes())
                 .recurring(expense.isRecurring())
                 .expenseTemplateId(expense.getExpenseTemplateId())
+                .plannedPurchaseId(expense.getPlannedPurchaseId())
                 .build();
     }
 

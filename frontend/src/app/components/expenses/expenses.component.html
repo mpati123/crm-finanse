@@ -82,10 +82,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let expense of paginatedExpenses">
+        <tr *ngFor="let expense of paginatedExpenses" [class.planned-purchase]="expense.plannedPurchaseId">
           <td class="name-cell">
             <span class="name">{{ expense.name }}</span>
             <span *ngIf="expense.recurring" class="recurring-badge">{{ 'EXPENSES.RECURRING' | translate }}</span>
+            <span *ngIf="expense.plannedPurchaseId" class="planned-badge">Zaplanowany zakup</span>
           </td>
           <td>{{ expense.categoryName || '-' }}</td>
           <td class="amount-cell">{{ formatCurrency(expense.amount) }}</td>
@@ -108,11 +109,11 @@
     </table>
 
     <!-- Pagination -->
-    <div class="pagination" *ngIf="totalPages > 1">
+    <div class="pagination">
       <div class="pagination-info">
-        Strona {{ currentPage }} z {{ totalPages }} ({{ filteredExpenses.length }} rekordów)
+        Strona {{ currentPage }} z {{ totalPages || 1 }} ({{ filteredExpenses.length }} rekordów)
       </div>
-      <div class="pagination-controls">
+      <div class="pagination-controls" *ngIf="totalPages > 1">
         <button class="btn-page" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
         <button class="btn-page" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
         <button *ngFor="let page of pageNumbers"

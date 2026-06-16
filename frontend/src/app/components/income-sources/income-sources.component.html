@@ -80,7 +80,7 @@
   </div>
 
   <div *ngIf="!loading && filteredSources.length > 0" class="sources-grid">
-    <div *ngFor="let source of filteredSources" class="source-card" [class.inactive]="!source.active">
+    <div *ngFor="let source of paginatedSources" class="source-card" [class.inactive]="!source.active">
       <div class="card-header">
         <div class="source-info">
           <h3>{{ source.name }}</h3>
@@ -177,6 +177,29 @@
         </button>
         <button class="btn-icon edit" (click)="openForm(source)" [title]="'COMMON.EDIT' | translate">{{ 'COMMON.EDIT' | translate }}</button>
         <button class="btn-icon delete" (click)="deleteSource(source.id!)" [title]="'COMMON.DELETE' | translate">{{ 'COMMON.DELETE' | translate }}</button>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-info">
+        Strona {{ currentPage }} z {{ totalPages || 1 }} ({{ filteredSources.length }} rekordów)
+      </div>
+      <div class="pagination-controls" *ngIf="totalPages > 1">
+        <button class="btn-page" (click)="goToPage(1)" [disabled]="currentPage === 1">«</button>
+        <button class="btn-page" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">‹</button>
+        <button *ngFor="let page of pageNumbers"
+                class="btn-page"
+                [class.active]="page === currentPage"
+                (click)="goToPage(page)">{{ page }}</button>
+        <button class="btn-page" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">›</button>
+        <button class="btn-page" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages">»</button>
+      </div>
+      <div class="page-size-selector">
+        <label>Na stronie:</label>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
       </div>
     </div>
   </div>

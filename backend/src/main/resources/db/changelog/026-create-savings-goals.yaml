@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 026-create-savings-goals
+      author: claude
+      changes:
+        - createTable:
+            tableName: savings_goals
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: target_amount
+                  type: decimal(12,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_amount
+                  type: decimal(12,2)
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_date
+                  type: date
+              - column:
+                  name: monthly_contribution
+                  type: decimal(12,2)
+              - column:
+                  name: priority
+                  type: varchar(20)
+                  defaultValue: 'MEDIUM'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(20)
+                  defaultValue: 'ACTIVE'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: icon
+                  type: varchar(50)
+              - column:
+                  name: color
+                  type: varchar(20)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP

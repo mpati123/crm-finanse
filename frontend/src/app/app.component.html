@@ -30,6 +30,18 @@
         </a>
       </li>
       <li>
+        <a routerLink="/planned-purchases" routerLinkActive="active" (click)="menuOpen = false">
+          <span class="icon">&#128722;</span>
+          <span class="label">{{ 'NAV.PLANNED_PURCHASES' | translate }}</span>
+        </a>
+      </li>
+      <li>
+        <a routerLink="/savings-goals" routerLinkActive="active" (click)="menuOpen = false">
+          <span class="icon">&#127919;</span>
+          <span class="label">{{ 'NAV.SAVINGS_GOALS' | translate }}</span>
+        </a>
+      </li>
+      <li>
         <a routerLink="/categories" routerLinkActive="active" (click)="menuOpen = false">
           <span class="icon">&#127991;</span>
           <span class="label">{{ 'NAV.CATEGORIES' | translate }}</span>

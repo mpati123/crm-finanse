@@ -5,6 +5,8 @@ import { Expense, Income, Category, Budget, Dashboard } from '../models/expense.
 import { IncomeSource, EnumOption, ZUSTypeOption } from '../models/income-source.model';
 import { ExpenseTemplate, FrequencyOption } from '../models/expense-template.model';
 import { TaxPerson, CostTypeOption } from '../models/tax-person.model';
+import { PlannedPurchase } from '../models/planned-purchase.model';
+import { SavingsGoal } from '../models/savings-goal.model';
 
 @Injectable({
   providedIn: 'root'
@@ -244,5 +246,63 @@ export class ApiService {
 
   getCostTypes(): Observable<CostTypeOption[]> {
     return this.http.get<CostTypeOption[]>(`${this.baseUrl}/tax-persons/cost-types`);
+  }
+
+  // Planned Purchases
+  getAllPlannedPurchases(): Observable<PlannedPurchase[]> {
+    return this.http.get<PlannedPurchase[]>(`${this.baseUrl}/planned-purchases`);
+  }
+
+  getPlannedPurchasesByYear(year: number): Observable<PlannedPurchase[]> {
+    return this.http.get<PlannedPurchase[]>(`${this.baseUrl}/planned-purchases/year/${year}`);
+  }
+
+  getPlannedPurchasesByMonth(year: number, month: number): Observable<PlannedPurchase[]> {
+    return this.http.get<PlannedPurchase[]>(`${this.baseUrl}/planned-purchases/year/${year}/month/${month}`);
+  }
+
+  createPlannedPurchase(purchase: PlannedPurchase): Observable<PlannedPurchase> {
+    return this.http.post<PlannedPurchase>(`${this.baseUrl}/planned-purchases`, purchase);
+  }
+
+  updatePlannedPurchase(id: number, purchase: PlannedPurchase): Observable<PlannedPurchase> {
+    return this.http.put<PlannedPurchase>(`${this.baseUrl}/planned-purchases/${id}`, purchase);
+  }
+
+  deletePlannedPurchase(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/planned-purchases/${id}`);
+  }
+
+  markPurchaseAsPurchased(id: number): Observable<PlannedPurchase> {
+    return this.http.post<PlannedPurchase>(`${this.baseUrl}/planned-purchases/${id}/mark-purchased`, {});
+  }
+
+  // Savings Goals
+  getAllSavingsGoals(): Observable<SavingsGoal[]> {
+    return this.http.get<SavingsGoal[]>(`${this.baseUrl}/savings-goals`);
+  }
+
+  getActiveSavingsGoals(): Observable<SavingsGoal[]> {
+    return this.http.get<SavingsGoal[]>(`${this.baseUrl}/savings-goals/active`);
+  }
+
+  createSavingsGoal(goal: SavingsGoal): Observable<SavingsGoal> {
+    return this.http.post<SavingsGoal>(`${this.baseUrl}/savings-goals`, goal);
+  }
+
+  updateSavingsGoal(id: number, goal: SavingsGoal): Observable<SavingsGoal> {
+    return this.http.put<SavingsGoal>(`${this.baseUrl}/savings-goals/${id}`, goal);
+  }
+
+  deleteSavingsGoal(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/savings-goals/${id}`);
+  }
+
+  addSavingsContribution(id: number, amount: number): Observable<SavingsGoal> {
+    return this.http.post<SavingsGoal>(`${this.baseUrl}/savings-goals/${id}/contribute`, { amount });
+  }
+
+  withdrawFromSavings(id: number, amount: number): Observable<SavingsGoal> {
+    return this.http.post<SavingsGoal>(`${this.baseUrl}/savings-goals/${id}/withdraw`, { amount });
   }
 }

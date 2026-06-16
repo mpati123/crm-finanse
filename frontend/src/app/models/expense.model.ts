@@ -8,6 +8,8 @@ export interface Expense {
   status: 'PAID' | 'PENDING' | 'REMAINING';
   notes?: string;
   recurring: boolean;
+  expenseTemplateId?: number;
+  plannedPurchaseId?: number;
 }
 
 export interface Income {

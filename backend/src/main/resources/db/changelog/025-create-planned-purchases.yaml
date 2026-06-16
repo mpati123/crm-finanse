@@ -1,0 +1,70 @@
+databaseChangeLog:
+  - changeSet:
+      id: 025-create-planned-purchases
+      author: claude
+      changes:
+        - createTable:
+            tableName: planned_purchases
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: amount
+                  type: decimal(12,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_planned_purchase_category
+                    references: categories(id)
+              - column:
+                  name: planned_year
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: planned_month
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: priority
+                  type: varchar(20)
+                  defaultValue: 'MEDIUM'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(20)
+                  defaultValue: 'PLANNED'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expense_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_planned_purchase_expense
+                    references: expenses(id)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP

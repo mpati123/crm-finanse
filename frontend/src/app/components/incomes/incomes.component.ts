@@ -37,7 +37,7 @@ export class IncomesComponent implements OnInit {
 
   // Pagination
   currentPage = 1;
-  pageSize = 15;
+  pageSize = 25;
   pageSizeOptions = [10, 15, 25, 50];
 
   newIncome: Income = {
