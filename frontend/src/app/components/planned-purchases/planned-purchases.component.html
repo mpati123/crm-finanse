@@ -66,6 +66,15 @@
 
   <div *ngIf="!loading && filteredPurchases.length > 0" class="purchases-table">
     <table>
+      <colgroup>
+        <col style="width: 250px;">
+        <col style="width: 120px;">
+        <col style="width: 100px;">
+        <col style="width: 100px;">
+        <col style="width: 100px;">
+        <col style="width: 100px;">
+        <col style="width: 120px;">
+      </colgroup>
       <thead>
         <tr>
           <th class="sortable" (click)="sort('name')">
@@ -89,9 +98,8 @@
       </thead>
       <tbody>
         <tr *ngFor="let purchase of paginatedPurchases" [class]="getStatusClass(purchase.status)">
-          <td class="name-cell">
-            <span class="name">{{ purchase.name }}</span>
-            <span *ngIf="purchase.description" class="description">{{ purchase.description }}</span>
+          <td class="name-cell" style="max-width: 280px; width: 280px;">
+            <div style="display: block; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">{{ purchase.name }}</div>
           </td>
           <td>{{ purchase.categoryName || '-' }}</td>
           <td>{{ getMonthName(purchase.plannedMonth) }}</td>

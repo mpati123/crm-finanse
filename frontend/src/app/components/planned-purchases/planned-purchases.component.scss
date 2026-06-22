@@ -88,6 +88,7 @@
 
     input, select {
       width: 100%;
+    table-layout: fixed;
       padding: 8px 12px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
@@ -182,12 +183,15 @@
 .purchases-table {
   background: white;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: collapse;
+    
+    min-width: 900px;
 
     th, td {
       padding: 14px 16px;
@@ -239,24 +243,29 @@
 }
 
 .name-cell {
+  max-width: 250px;
+  
+  // Kontener wewnętrzny który wymusza ograniczenie szerokości
+  > .name,
+  > .description {
+    display: block;
+    max-width: 250px;
+    width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .name {
     font-weight: 500;
-    display: block;
   }
 
   .description {
-    display: block;
     font-size: 12px;
     color: #6b7280;
     margin-top: 4px;
   }
 }
-
-.amount-cell {
-  font-weight: 600;
-  color: #7c3aed !important;
-}
-
 .actions-cell {
   white-space: nowrap;
 }
@@ -420,6 +429,7 @@
   background: white;
   border-radius: 16px;
   width: 100%;
+    table-layout: fixed;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
@@ -468,6 +478,7 @@
 
     input, select, textarea {
       width: 100%;
+    table-layout: fixed;
       padding: 10px 14px;
       border: 1px solid #d1d5db;
       border-radius: 8px;
